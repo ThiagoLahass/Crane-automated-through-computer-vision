@@ -20,37 +20,59 @@ int V_MAX = 255;
 
 //============= BASED ON TESTS ==========
 
+//initial min and max HSV filter to RED
+int H_MIN_RED = 145;
+int H_MAX_RED = 182;
+int S_MIN_RED = 69;
+int S_MAX_RED = 151;
+int V_MIN_RED = 202;
+int V_MAX_RED = 255;
+
 //initial min and max HSV filter to GREEN
-int H_MIN_GREEN = 78;
-int H_MAX_GREEN = 98;
-int S_MIN_GREEN = 129;
-int S_MAX_GREEN = 256;
-int V_MIN_GREEN = 122;
-int V_MAX_GREEN = 211;
+int H_MIN_GREEN = 92;
+int H_MAX_GREEN = 105;
+int S_MIN_GREEN = 94;
+int S_MAX_GREEN = 214;
+int V_MIN_GREEN = 98;
+int V_MAX_GREEN = 173;
 
 //initial min and max HSV filter to BLUE
 int H_MIN_BLUE = 92;
-int H_MAX_BLUE = 122;
-int S_MIN_BLUE = 136;
-int S_MAX_BLUE = 256;
-int V_MIN_BLUE = 209;
-int V_MAX_BLUE = 256;
-
-//initial min and max HSV filter to RED
-int H_MIN_RED = 63;
-int H_MAX_RED = 104;
-int S_MIN_RED = 98;
-int S_MAX_RED = 256;
-int V_MIN_RED = 94;
-int V_MAX_RED = 211;
+int H_MAX_BLUE = 125;
+int S_MIN_BLUE = 121;
+int S_MAX_BLUE = 250;
+int V_MIN_BLUE = 206;
+int V_MAX_BLUE = 255;
 
 //initial min and max HSV filter to YELLOW
-int H_MIN_YELLOW = 63;
-int H_MAX_YELLOW = 104;
-int S_MIN_YELLOW = 98;
-int S_MAX_YELLOW = 256;
-int V_MIN_YELLOW = 94;
-int V_MAX_YELLOW = 211;
+int H_MIN_YELLOW = 0;
+int H_MAX_YELLOW = 49;
+int S_MIN_YELLOW = 14;
+int S_MAX_YELLOW = 69;
+int V_MIN_YELLOW = 157;
+int V_MAX_YELLOW = 255;
+
+#define RED		0
+#define GREEN	1
+#define BLUE	2
+#define YELLOW	3
+
+int COLOR = 0;
+
+vector<vector<int>> myColorsThresholds{
+	{H_MIN_RED,		S_MIN_RED,		V_MIN_RED,		H_MAX_RED,		S_MAX_RED,		V_MAX_RED},		// RED
+	{H_MIN_GREEN,	S_MIN_GREEN,	V_MIN_GREEN,	H_MAX_GREEN,	S_MAX_GREEN,	V_MAX_GREEN},	// GREEN
+	{H_MIN_BLUE,	S_MIN_BLUE,		V_MIN_BLUE,		H_MAX_BLUE,		S_MAX_BLUE,		V_MAX_BLUE},	// BLUE
+	{H_MIN_YELLOW,	S_MIN_YELLOW,	V_MIN_YELLOW,	H_MAX_YELLOW,	S_MAX_YELLOW,	V_MAX_YELLOW}	// YELLOW
+};
+
+vector<Scalar> myColorsValues{
+//   B  G  R
+	{0, 0, 255},  // RED
+	{0, 255, 0},  // GREEN
+	{255, 0, 0},  // BLUE
+	{0, 255, 255} // YELLOW
+};
 
 //=========================================
 
@@ -70,8 +92,9 @@ const string trackbarWindowName = "Trackbars";
 
 void createTrackbars();
 void cleanNoiseMorphOps(Mat img);
-void trackFilteredObject(int& x, int& y, Mat imgMask, Mat imgOriginal);
-void drawObject(int x, int y, Mat img);
+void trackFilteredObject(int& x, int& y, int color, Mat imgMask, Mat imgOriginal);
+void drawCrosshairs(int x, int y, int color, Mat img);
+Point getCenterOfNearestContainer(Mat imgMask, Mat imgOriginal, int color);
 
 int main() {
 
@@ -84,6 +107,8 @@ int main() {
 
 	VideoCapture capture(1);
 	Mat imgOriginal, imgHSV, imgMask;
+	Mat imgMaskRed, imgMaskGreen, imgMaskBlue, imgMaskYellow;
+	Mat imgMasks[4] = { imgMaskRed, imgMaskGreen, imgMaskBlue, imgMaskYellow };
 
 	/* string path = "Resources/containers1.jpg";
 	imgOriginal = imread(path);
@@ -106,32 +131,95 @@ int main() {
 
 		//store video image into 'imgOriginal' matrix
 		capture.read(imgOriginal);
-
+		
 		//convert frame from BGR to HSV colorspace
 		cvtColor(imgOriginal, imgHSV, COLOR_BGR2HSV);
 
-		Scalar lower(H_MIN, S_MIN, V_MIN);
-		Scalar upper(H_MAX, S_MAX, V_MAX);
-		//filter HSV image between values and store filtered image to 'imgThreshold' matrix
-		inRange(imgHSV, lower, upper, imgMask);
 
-		//perform morphological operations on thresholded image to eliminate noise
-		//and emphasize the filtered object(s)
-		if (useMorphOps) cleanNoiseMorphOps(imgMask);
+		// findColors()
 
-		//pass in thresholded frame to our object tracking function
-		//this function will return the x and y coordinates of the
-		//filtered object
-		if (trackObjects) trackFilteredObject(x, y, imgMask, imgOriginal);
+		vector<vector<int>> newPoints;
+
+		for (int i = 0; i < myColorsThresholds.size(); i++) {
+			Scalar lower(myColorsThresholds[i][0], myColorsThresholds[i][1], myColorsThresholds[i][2]);
+			Scalar upper(myColorsThresholds[i][3], myColorsThresholds[i][4], myColorsThresholds[i][5]);
+
+			inRange(imgHSV, lower, upper, imgMasks[i]);
+
+			//perform morphological operations on thresholded image to eliminate noise
+			//and emphasize the filtered object(s)
+			if (useMorphOps) cleanNoiseMorphOps(imgMasks[i]);
+
+			imshow(to_string(i), imgMasks[i]);
+
+			Point myContainerPoint(0, 0);
+
+
+			//pass in thresholded frame to our object tracking function
+			//this function will return the x and y coordinates of the
+			//filtered object
+			if (trackObjects && i == COLOR) {
+				myContainerPoint = getCenterOfNearestContainer(imgMasks[i], imgOriginal, COLOR);
+
+				if (myContainerPoint.x != 0 && myContainerPoint.y != 0) {
+					drawCrosshairs(myContainerPoint.x, myContainerPoint.y, COLOR, imgOriginal);
+				}
+				//trackFilteredObject(x, y, i, imgMasks[i], imgOriginal);
+			}
+		}
+
+
+		//Scalar lower(H_MIN, S_MIN, V_MIN);
+		//Scalar upper(H_MAX, S_MAX, V_MAX);
+		////filter HSV image between values and store filtered image to 'imgThreshold' matrix
+		//inRange(imgHSV, lower, upper, imgMask);
+
+		////perform morphological operations on thresholded image to eliminate noise
+		////and emphasize the filtered object(s)
+		//if (useMorphOps) cleanNoiseMorphOps(imgMask);
+
+		////pass in thresholded frame to our object tracking function
+		////this function will return the x and y coordinates of the
+		////filtered object
+		//if (trackObjects) trackFilteredObject(x, y, GREEN, imgMask, imgOriginal);
 
 		imshow("Image Original", imgOriginal);
-		imshow("Image HSV", imgHSV);
-		imshow("Image Threshold", imgMask);
+		//imshow("Image HSV", imgHSV);
+		//imshow("Image Threshold", imgMask);
 		waitKey(1);
 	}
 
 	return 0;
 }
+
+void onTrackbar_H_MIN(int value, void* pointer) {
+	H_MIN = value;
+}
+
+void onTrackbar_H_MAX(int value, void* pointer) {
+	H_MAX = value;
+}
+
+void onTrackbar_S_MIN(int value, void* pointer) {
+	S_MIN = value;
+}
+
+void onTrackbar_S_MAX(int value, void* pointer) {
+	S_MAX = value;
+}
+
+void onTrackbar_V_MIN(int value, void* pointer) {
+	V_MIN = value;
+}
+
+void onTrackbar_V_MAX(int value, void* pointer) {
+	V_MAX = value;
+}
+
+void onTrackbar_COLOR(int value, void* pointer) {
+	COLOR = value;
+}
+
 
 void createTrackbars() {
 	//create window for trackbars
@@ -140,12 +228,17 @@ void createTrackbars() {
 	//create trackbars and insert them into window
 	//2 parameters are: the address of the variable that is changing when the trackbar is moved(eg.H_LOW),
 	//the max value the trackbar can move (eg. H_HIGH)
-	createTrackbar("Hue Min", trackbarWindowName, &H_MIN, H_MAX);
-	createTrackbar("Hue Max", trackbarWindowName, &H_MAX, H_MAX);
-	createTrackbar("Sat Min", trackbarWindowName, &S_MIN, S_MAX);
-	createTrackbar("Sat Max", trackbarWindowName, &S_MAX, S_MAX);
-	createTrackbar("Val Min", trackbarWindowName, &V_MIN, V_MAX);
-	createTrackbar("Val Max", trackbarWindowName, &V_MAX, V_MAX);
+	createTrackbar("Hue Min", trackbarWindowName, NULL, H_MAX, onTrackbar_H_MIN);
+	createTrackbar("Hue Max", trackbarWindowName, NULL, H_MAX, onTrackbar_H_MAX);
+	setTrackbarPos("Hue Max", trackbarWindowName, H_MAX);
+	createTrackbar("Sat Min", trackbarWindowName, NULL, S_MAX, onTrackbar_S_MIN);
+	createTrackbar("Sat Max", trackbarWindowName, NULL, S_MAX, onTrackbar_S_MAX);
+	setTrackbarPos("Sat Max", trackbarWindowName, S_MAX);
+	createTrackbar("Val Min", trackbarWindowName, NULL, V_MAX, onTrackbar_V_MIN);
+	createTrackbar("Val Max", trackbarWindowName, NULL, V_MAX, onTrackbar_V_MAX);
+	setTrackbarPos("Val Max", trackbarWindowName, V_MAX);
+
+	createTrackbar("Color", trackbarWindowName, &COLOR, myColorsThresholds.size() - 1, onTrackbar_COLOR);
 }
 
 void cleanNoiseMorphOps(Mat img) {
@@ -157,13 +250,13 @@ void cleanNoiseMorphOps(Mat img) {
 	Mat dilateElement = getStructuringElement(MORPH_RECT, Size(8, 8));
 
 	erode(img, img, erodeElement);
-	// erode(img, img, erodeElement);
+	//erode(img, img, erodeElement);
 
 	dilate(img, img, dilateElement);
-	// dilate(img, img, dilateElement);
+	//dilate(img, img, dilateElement);
 }
 
-void trackFilteredObject(int& x, int& y, Mat imgMask, Mat imgOriginal) {
+void trackFilteredObject(int& x, int& y, int color, Mat imgMask, Mat imgOriginal) {
 	//temporary auxiliar image
 	Mat imgTemp;
 	imgMask.copyTo(imgTemp);
@@ -204,7 +297,7 @@ void trackFilteredObject(int& x, int& y, Mat imgMask, Mat imgOriginal) {
 			if (objectFound == true) {
 				putText(imgOriginal, "Tracking Object", Point(0, 50), 2, 1, Scalar(0, 255, 0), 2);
 				//draw object location on screen
-				drawObject(x, y, imgOriginal);
+				drawCrosshairs(x, y, color, imgOriginal);
 			}
 
 		}
@@ -212,21 +305,57 @@ void trackFilteredObject(int& x, int& y, Mat imgMask, Mat imgOriginal) {
 	}
 }
 
-void drawObject(int x, int y, Mat img) {
+void drawCrosshairs(int x, int y, int color, Mat img) {
 	//use some of the openCV drawing functions to draw crosshairs on tracked image
-	circle(img, Point(x, y), 20, Scalar(0, 255, 0), 2);
+	circle(img, Point(x, y), 20, myColorsValues[color], 2);
 
-	if (y - 25 > 0) line(img, Point(x, y), Point(x, y - 25), Scalar(0, 255, 0), 2);
-	else line(img, Point(x, y), Point(x, 0), Scalar(0, 255, 0), 2);
+	if (y - 25 > 0) line(img, Point(x, y), Point(x, y - 25), myColorsValues[color], 2);
+	else line(img, Point(x, y), Point(x, 0), myColorsValues[color], 2);
 
-	if (y + 25 < FRAME_HEIGHT) line(img, Point(x, y), Point(x, y + 25), Scalar(0, 255, 0), 2);
-	else line(img, Point(x, y), Point(x, FRAME_HEIGHT), Scalar(0, 255, 0), 2);
+	if (y + 25 < FRAME_HEIGHT) line(img, Point(x, y), Point(x, y + 25), myColorsValues[color], 2);
+	else line(img, Point(x, y), Point(x, FRAME_HEIGHT), myColorsValues[color], 2);
 	
-	if (x - 25 > 0) line(img, Point(x, y), Point(x - 25, y), Scalar(0, 255, 0), 2);
-	else line(img, Point(x, y), Point(0, y), Scalar(0, 255, 0), 2);
+	if (x - 25 > 0) line(img, Point(x, y), Point(x - 25, y), myColorsValues[color], 2);
+	else line(img, Point(x, y), Point(0, y), myColorsValues[color], 2);
 	
-	if (x + 25 < FRAME_WIDTH) line(img, Point(x, y), Point(x + 25, y), Scalar(0, 255, 0), 2);
-	else line(img, Point(x, y), Point(FRAME_WIDTH, y), Scalar(0, 255, 0), 2);
+	if (x + 25 < FRAME_WIDTH) line(img, Point(x, y), Point(x + 25, y), myColorsValues[color], 2);
+	else line(img, Point(x, y), Point(FRAME_WIDTH, y), myColorsValues[color], 2);
 
-	putText(img, to_string(x) + "," + to_string(y), Point(x, y + 30), 1, 1, Scalar(0, 255, 0), 2);
+	putText(img, to_string(x) + "," + to_string(y), Point(x, y + 30), 1, 1, Scalar(0, 0, 255), 2);
+}
+
+Point getCenterOfNearestContainer(Mat imgMask, Mat imgOriginal, int color) {
+
+	vector<vector<Point>> contours;
+	vector<Vec4i> hierarchy;
+
+	findContours(imgMask, contours, hierarchy, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
+
+	vector<vector<Point>> contoursPoly(contours.size());
+	vector<Rect> boundRect(contours.size());
+
+	Point myPoint(0, 0);
+
+	// filter by area before draw to reject noise
+	for (int i = 0; i < contours.size(); i++) {
+		int area = contourArea(contours[i]);
+		// cout << area << endl;
+
+		if (area > MIN_OBJECT_AREA) {
+			float perimeter = arcLength(contours[i], true);
+			approxPolyDP(contours[i], contoursPoly[i], 0.01 * perimeter, true);
+			//cout << contoursPoly[i].size() << endl;
+			boundRect[i] = boundingRect(contoursPoly[i]);
+
+			drawContours(imgOriginal, contoursPoly, i, myColorsValues[color], 2);
+			// rectangle(imgOriginal, boundRect[i].tl(), boundRect[i].br(), Scalar(0, 255, 0), 5);
+
+			if ((boundRect[i].y + boundRect[i].height / 2)  > myPoint.y) {
+				myPoint.x = boundRect[i].x + boundRect[i].width / 2;
+				myPoint.y = boundRect[i].y + boundRect[i].height / 2;
+			}
+		}
+	}
+
+	return myPoint;
 }
