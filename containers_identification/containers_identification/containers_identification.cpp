@@ -105,7 +105,7 @@ int main() {
 	//x and y values for the location of the object
 	int x = 0, y = 0;
 
-	VideoCapture capture(1);
+	VideoCapture capture(0);
 	Mat imgOriginal, imgHSV, imgMask;
 	Mat imgMaskRed, imgMaskGreen, imgMaskBlue, imgMaskYellow;
 	Mat imgMasks[4] = { imgMaskRed, imgMaskGreen, imgMaskBlue, imgMaskYellow };
