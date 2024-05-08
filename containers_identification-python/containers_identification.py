@@ -28,12 +28,12 @@ V_MIN_GREEN = 98
 V_MAX_GREEN = 173
 
 # initial min and max HSV filter to BLUE
-H_MIN_BLUE = 92
-H_MAX_BLUE = 125
-S_MIN_BLUE = 121
-S_MAX_BLUE = 250
-V_MIN_BLUE = 206
-V_MAX_BLUE = 255
+H_MIN_BLUE = 90
+H_MAX_BLUE = 104
+S_MIN_BLUE = 168
+S_MAX_BLUE = 255
+V_MIN_BLUE = 87
+V_MAX_BLUE = 134
 
 # initial min and max HSV filter to YELLOW
 H_MIN_YELLOW = 0
@@ -47,6 +47,8 @@ RED		= 0
 GREEN	= 1
 BLUE	= 2
 YELLOW	= 3
+
+COLORS_NAME = ["RED", "GRENN", "BLUE", "YELLOW"]
 
 COLOR = 0
 
@@ -248,47 +250,45 @@ def main():
 
         img_HSV = cv2.cvtColor(img_original, cv2.COLOR_BGR2HSV)
 
-        for i, thresholds in enumerate(my_colors_thresholds):
-            lower = np.array(thresholds[:3])
-            upper = np.array(thresholds[3:])
-            img_mask = cv2.inRange(img_HSV, lower, upper)
-            clean_noise_morph_ops(img_mask)
-            cv2.imshow(str(i), img_mask)
+        # for i, thresholds in enumerate(my_colors_thresholds):
+        #     lower = np.array(thresholds[:3])
+        #     upper = np.array(thresholds[3:])
+        #     img_mask = cv2.inRange(img_HSV, lower, upper)
+        #     clean_noise_morph_ops(img_mask)
+        #     cv2.imshow(COLORS_NAME[i], img_mask)
 
-            if track_objects and i == COLOR:
-                my_container_point = get_center_of_nearest_container(img_mask, img_original, COLOR)
-                if my_container_point != (0, 0):
-                    drawCrosshairs(my_container_point[0], my_container_point[1], COLOR, img_original)
+        #     if track_objects and i == COLOR:
+        #         my_container_point = get_center_of_nearest_container(img_mask, img_original, COLOR)
+        #         if my_container_point != (0, 0):
+        #             drawCrosshairs(my_container_point[0], my_container_point[1], COLOR, img_original)
 
+    
+        # ====== PARA TESTES COM IMAGEM ======:
+        # Definição dos valores mínimos e máximos para a máscara HSV
+        lower = np.array([H_MIN, S_MIN, V_MIN])
+        upper = np.array([H_MAX, S_MAX, V_MAX])
+
+        # Filtragem da imagem HSV entre os valores e armazenamento na matriz 'img_mask'
+        img_mask = cv2.inRange(img_HSV, lower, upper)
+
+        # Operações morfológicas na imagem thresholded para eliminar ruído
+        # e enfatizar o(s) objeto(s) filtrado(s)
+        if use_morph_ops:
+            img_mask = clean_noise_morph_ops(img_mask)
+
+        # Passagem do frame thresholded para nossa função de rastreamento de objetos
+        # esta função retornará as coordenadas x e y do objeto filtrado
+        if track_objects:
+            track_filtered_object(GREEN, img_mask, img_original)
+
+        # Exibição das imagens
         cv2.imshow("Image Original", img_original)
+        cv2.imshow("Image HSV", img_HSV)
+        cv2.imshow("Image Threshold", img_mask)
+
         key = cv2.waitKey(1)
         if key == 27:  # Press ESC to exit
             break
-        
-        
-        # ====== PARA TESTES COM IMAGEM ======:
-        # # Definição dos valores mínimos e máximos para a máscara HSV
-        # lower = np.array([H_MIN, S_MIN, V_MIN])
-        # upper = np.array([H_MAX, S_MAX, V_MAX])
-
-        # # Filtragem da imagem HSV entre os valores e armazenamento na matriz 'img_mask'
-        # img_mask = cv2.inRange(img_HSV, lower, upper)
-
-        # # Operações morfológicas na imagem thresholded para eliminar ruído
-        # # e enfatizar o(s) objeto(s) filtrado(s)
-        # if use_morph_ops:
-        #     img_mask = clean_noise_morph_ops(img_mask)
-
-        # # Passagem do frame thresholded para nossa função de rastreamento de objetos
-        # # esta função retornará as coordenadas x e y do objeto filtrado
-        # if track_objects:
-        #     track_filtered_object(GREEN, img_mask, img_original)
-
-        # # Exibição das imagens
-        # cv2.imshow("Image Original", img_original)
-        # cv2.imshow("Image HSV", img_HSV)
-        # cv2.imshow("Image Threshold", img_mask)
-        # cv2.waitKey(1)
 
     # capture.release()
     cv2.destroyAllWindows()
