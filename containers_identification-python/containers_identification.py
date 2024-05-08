@@ -1,6 +1,23 @@
 import cv2
 import numpy as np
+import serial
+import time
 
+#==================== ESP SERIAL COMUNICATION VARIABLES AND FUNCTIONS ====================
+PORT_NAME = 'COM6'
+
+# read one char (default)
+def read_ser(port, num_char = 1):
+	string = port.read(num_char)
+	return string.decode()
+
+# Write whole strings
+def write_ser(port, cmd):
+	cmd = cmd + '\n'
+	port.write(cmd.encode())
+#==================== END ESP SERIAL COMUNICATION VARIABLES AND FUNCTIONS ====================
+
+#==================== OBJECT IDENTIFIER AND TRACKING VARIABLES AND FUNCTIONS ====================
 # initial min and max HSV filter values.
 # these will be changed using trackbars
 H_MIN = 0
@@ -42,6 +59,7 @@ S_MIN_YELLOW = 14
 S_MAX_YELLOW = 69
 V_MIN_YELLOW = 157
 V_MAX_YELLOW = 255
+# ============= END BASED ON TESTS ==========
 
 RED		= 0
 GREEN	= 1
@@ -53,18 +71,18 @@ COLORS_NAME = ["RED", "GRENN", "BLUE", "YELLOW"]
 COLOR = 0
 
 my_colors_thresholds = [
-    [H_MIN_RED, S_MIN_RED, V_MIN_RED, H_MAX_RED, S_MAX_RED, V_MAX_RED],                     # RED
-    [H_MIN_GREEN, S_MIN_GREEN, V_MIN_GREEN, H_MAX_GREEN, S_MAX_GREEN, V_MAX_GREEN],         # GREEN
-    [H_MIN_BLUE, S_MIN_BLUE, V_MIN_BLUE, H_MAX_BLUE, S_MAX_BLUE, V_MAX_BLUE],               # BLUE
-    [H_MIN_YELLOW, S_MIN_YELLOW, V_MIN_YELLOW, H_MAX_YELLOW, S_MAX_YELLOW, V_MAX_YELLOW]    # YELLOW
+    [H_MIN_RED,     S_MIN_RED,      V_MIN_RED,      H_MAX_RED,      S_MAX_RED,      V_MAX_RED   ],      # RED
+    [H_MIN_GREEN,   S_MIN_GREEN,    V_MIN_GREEN,    H_MAX_GREEN,    S_MAX_GREEN,    V_MAX_GREEN ],      # GREEN
+    [H_MIN_BLUE,    S_MIN_BLUE,     V_MIN_BLUE,     H_MAX_BLUE,     S_MAX_BLUE,     V_MAX_BLUE  ],      # BLUE
+    [H_MIN_YELLOW,  S_MIN_YELLOW,   V_MIN_YELLOW,   H_MAX_YELLOW,   S_MAX_YELLOW,   V_MAX_YELLOW]       # YELLOW
 ]
 
 my_colors_values = [
-#    B  G  R
-    (0, 0, 255),    # RED
-    (0, 255, 0),    # GREEN
-    (255, 0, 0),    # BLUE
-    (0, 255, 255)   # YELLOW
+#    B      G       R
+    (0,     0,      255 ),      # RED
+    (0,     255,    0   ),      # GREEN
+    (255,   0,      0   ),      # BLUE
+    (0,     255,    255 )       # YELLOW
 ]
 
 # default capture width and height
@@ -72,7 +90,7 @@ FRAME_WIDTH = 640
 FRAME_HEIGHT = 480
 
 # max number of objects to be detected in frame
-MAX_NUM_OBJECTS = 50
+MAX_NUM_OBJECTS = 5
 
 # minimum and maximum object area
 MIN_OBJECT_AREA = 20 * 20
@@ -226,7 +244,27 @@ def get_center_of_nearest_container(img_mask, img_original, color):
 
     return my_point
 
+#==================== END OBJECT IDENTIFIER AND TRACKING VARIABLES AND FUNCTIONS ====================
+
 def main():
+    #==================== ESP SERIAL COMUNICATION SETUP ====================
+    MAX_BUFF_LEN = 255
+    SETUP 		 = False
+    port 		 = None
+    prev = time.time()
+    while(not SETUP):
+        try:
+            #Serial port(windows-->COM), baud rate, timeout msg
+            port = serial.Serial(PORT_NAME, 9600, timeout=1)
+
+        except: # Bad way of writing excepts (always know your errors)
+            if(time.time() - prev > 2): # Don't spam with msg
+                print('No serial detected, please plug your uController')
+                prev = time.time()
+
+        if(port is not None): # We're connected
+            SETUP = True
+    #=================== END ESP SERIAL COMUNICATION SETUP ==================
 
     # some boolean variables for different functionality within this program
     track_objects = True
@@ -262,8 +300,6 @@ def main():
         #         if my_container_point != (0, 0):
         #             drawCrosshairs(my_container_point[0], my_container_point[1], COLOR, img_original)
 
-    
-        # ====== PARA TESTES COM IMAGEM ======:
         # Definição dos valores mínimos e máximos para a máscara HSV
         lower = np.array([H_MIN, S_MIN, V_MIN])
         upper = np.array([H_MAX, S_MAX, V_MAX])
@@ -289,6 +325,14 @@ def main():
         key = cv2.waitKey(1)
         if key == 27:  # Press ESC to exit
             break
+
+        # SERIAL COMUNICATION
+        cmd = 'b0' + str(H_MIN)
+        write_ser(port, cmd)
+
+        # string = read_ser(port, MAX_BUFF_LEN)
+        # if(len(string)):
+        #     print(string)
 
     # capture.release()
     cv2.destroyAllWindows()
