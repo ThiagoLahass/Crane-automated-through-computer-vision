@@ -86,14 +86,14 @@ my_colors_values = [
 ]
 
 # default capture width and height
-FRAME_WIDTH = 640
-FRAME_HEIGHT = 480
+FRAME_WIDTH     = 640
+FRAME_HEIGHT    = 480
 
 # max number of objects to be detected in frame
 MAX_NUM_OBJECTS = 5
 
 # minimum and maximum object area
-MIN_OBJECT_AREA = 20 * 20
+MIN_OBJECT_AREA = 20 * 20                                   # AJUSTAR QUANDO TIVER FAZENDO A DETECÇÃO DE CONTAINERS NA PONTE ROLANTE
 MAX_OBJECT_AREA = int(FRAME_HEIGHT * FRAME_WIDTH / 1.5)
 
 trackbar_window_name = "Trackbars"
@@ -268,14 +268,14 @@ def main():
             SETUP = True
     #=================== END ESP SERIAL COMUNICATION SETUP ==================
 
-    #==================== OBJECT POSITION ====================
+    #==================== OBJECT POSITION VARIABLES ====================
     X_CENTER = FRAME_WIDTH / 2
     Y_CENTER = FRAME_HEIGHT / 2
     x = 0
     y = 0
     delta_x = 0
     delta_y = 0
-    #==================== END OBJECT POSITION =================
+    #=================== END OBJECT POSITION VARIABLES =================
 
     # some boolean variables for different functionality within this program
     track_objects = True
@@ -333,8 +333,12 @@ def main():
             delta_x = int (X_CENTER - x)
             delta_y = int (Y_CENTER - y)
 
+            # Preenchimento com zeros à esquerda para garantir 3 dígitos
+            delta_x_str = str(delta_x).zfill(3)
+            delta_y_str = str(delta_y).zfill(3)
+
             # SERIAL COMUNICATION - WRITE
-            cmd = f'{delta_x} {delta_y}'
+            cmd = f'{delta_x_str} {delta_y_str}'
             write_ser(port, cmd)
 
             # SERIAL COMUNICATION - READ
