@@ -188,10 +188,12 @@ def track_filtered_object(color, img_mask, img_original):
         # let user know you found an object
         cv2.putText(img_original, "Tracking Object", (0, 50), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 255, 0), 2)
         drawCrosshairs(x, y, color, img_original)
+        return (x,y)
         
     else:
         cv2.putText(img_original, "Too much noise! Adjust filter", (0, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
-
+        return (0,0)
+    
 def drawCrosshairs(x, y, color, img):
     # use some of the openCV drawing functions to draw crosshairs on tracked image
     cv2.circle(img, (x, y), 20, my_colors_values[color], 2)
@@ -266,6 +268,15 @@ def main():
             SETUP = True
     #=================== END ESP SERIAL COMUNICATION SETUP ==================
 
+    #==================== OBJECT POSITION ====================
+    X_CENTER = FRAME_WIDTH / 2
+    Y_CENTER = FRAME_HEIGHT / 2
+    x = 0
+    y = 0
+    delta_x = 0
+    delta_y = 0
+    #==================== END OBJECT POSITION =================
+
     # some boolean variables for different functionality within this program
     track_objects = True
     use_morph_ops = False
@@ -301,8 +312,11 @@ def main():
         #             drawCrosshairs(my_container_point[0], my_container_point[1], COLOR, img_original)
 
         # Definição dos valores mínimos e máximos para a máscara HSV
-        lower = np.array([H_MIN, S_MIN, V_MIN])
-        upper = np.array([H_MAX, S_MAX, V_MAX])
+        # lower = np.array([H_MIN, S_MIN, V_MIN])
+        # upper = np.array([H_MAX, S_MAX, V_MAX])
+
+        lower = np.array([H_MIN_BLUE, S_MIN_BLUE, V_MIN_BLUE])
+        upper = np.array([H_MAX_BLUE, S_MAX_BLUE, V_MAX_BLUE])
 
         # Filtragem da imagem HSV entre os valores e armazenamento na matriz 'img_mask'
         img_mask = cv2.inRange(img_HSV, lower, upper)
@@ -315,7 +329,18 @@ def main():
         # Passagem do frame thresholded para nossa função de rastreamento de objetos
         # esta função retornará as coordenadas x e y do objeto filtrado
         if track_objects:
-            track_filtered_object(GREEN, img_mask, img_original)
+            (x,y) = track_filtered_object(GREEN, img_mask, img_original)
+            delta_x = int (X_CENTER - x)
+            delta_y = int (Y_CENTER - y)
+
+            # SERIAL COMUNICATION - WRITE
+            cmd = f'{delta_x} {delta_y}'
+            write_ser(port, cmd)
+
+            # SERIAL COMUNICATION - READ
+            # string = read_ser(port, MAX_BUFF_LEN)
+            # if(len(string)):
+            #     print(string)
 
         # Exibição das imagens
         cv2.imshow("Image Original", img_original)
@@ -325,14 +350,6 @@ def main():
         key = cv2.waitKey(1)
         if key == 27:  # Press ESC to exit
             break
-
-        # SERIAL COMUNICATION
-        cmd = 'b0' + str(H_MIN)
-        write_ser(port, cmd)
-
-        # string = read_ser(port, MAX_BUFF_LEN)
-        # if(len(string)):
-        #     print(string)
 
     # capture.release()
     cv2.destroyAllWindows()

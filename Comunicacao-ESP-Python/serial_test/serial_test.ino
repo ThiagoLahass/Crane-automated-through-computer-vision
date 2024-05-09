@@ -75,6 +75,8 @@ void loop() {
       delay_t = strtol(str+1, NULL, 10); // str+1 --> exclude the first char
       /* Some input checking could've been done here (like b15f2 --> invalid) */
 
+      Serial.println(strtol(str+2, NULL, 10));
+
       // Reset reading index 
       idx = 0;
     }
