@@ -1,43 +1,32 @@
 #include <Servo.h>
 
-#define VALOR_PWM_SERVO360_PARADO 93
-#define VELOCIDADE_SERVO 5
-#define TEMPO_ABAIXAR_ELETROIMA 3000
-#define RANGE_ERRO_PERMITIDO_POSICAO_CONTAINER 20
-#define TEMPO_CENTRO_PONTE_ATE_CARRINHO 5000
-#define SERVO A0
+#define VALOR_PWM_SERVO360_PARADO 				      93
+#define VELOCIDADE_SERVO 						            5
+#define TEMPO_ABAIXAR_ELETROIMA 				        3000
+#define RANGE_ERRO_PERMITIDO_POSICAO_CONTAINER 	20
+#define TEMPO_CENTRO_PONTE_ATE_CARRINHO 		    5000
+#define SERVO 									                A0
 Servo servo;
 
-int EN_A = 5;
-int IN1 = 7;
-int IN2 = 6;
+#define EN_A		5
+#define IN1  		7
+#define IN2			6
 
-int EN_B = 3;
-int IN3 = 4;
-int IN4 = 2;
+#define EN_B 		3
+#define IN3 		4
+#define IN4 		2
 
-int ELETROIMA = 8;
+#define ELETROIMA 	8
 
-int LIM_X_MIN = 12;
-int LIM_X_MAX = 11;
-int LIM_Y_MIN = 10;
-int LIM_Y_MAX = 9;
+#define LIM_X_MIN  	12
+#define LIM_X_MAX   11
+#define LIM_Y_MIN   10
+#define LIM_Y_MAX   9
 
-int lim_x_min = 0;
-int lim_x_max = 0;
-int lim_y_min = 0;
-int lim_y_max = 0;
+#define VELOCIDADE_MOT_MOV 	A1
+#define MOVIMENTO_MOT_1		  A2
+#define MOVIMENTO_MOT_2 	  A3
 
-int VELOCIDADE_MOT_MOV = A1;
-int MOVIMENTO_MOT_1 = A2;
-int MOVIMENTO_MOT_2 = A3;
-int userInput1 = NULL;
-int userInput2 = NULL;
-
-//////////////////////////////////////////////////////
-int ENABLE_CONTAINER_READ = 13;
-
-// Communication buffers lengths
 #define MAX_BUFF_LEN        255 
 #define CMD_BUFF_LEN        6
 
@@ -48,10 +37,13 @@ uint8_t idx = 0; 			// Reading index
 
 int delta_x = 0;
 int delta_y = 0;
-unsigned long prev_time;
 
-//////////////////////////////////////////////////////////
+int lim_x_min = 0;
+int lim_x_max = 0;
+int lim_y_min = 0;
+int lim_y_max = 0;
 
+/////////////////////////////////////////////////////////////////////////////////////
 void speed();
 void move(int in1_, int in2_, int in3_, int in4_);
 void move_1_forward_2_forward();
@@ -65,15 +57,18 @@ void move_1_backward_2_stop();
 void move_1_backward_2_backward();
 void move_to_initial_position();
 void move_to_central_position();
-
 void pegar_carga_e_icar();
 void abaixar_carga_e_soltar();
+
+void lim_min_x_interruption();
+void lim_max_x_interruption();
+void lim_min_y_interruption();
+void lim_max_y_interruption();
+//////////////////////////////////////////////////////////////////////////////////////
 
 void setup(){
   Serial.begin(9600);
   servo.attach(SERVO);
-  
-  pinMode(LED_BUILTIN, OUTPUT);
   
   pinMode(EN_A, OUTPUT);
   pinMode(IN1, OUTPUT);
@@ -94,23 +89,34 @@ void setup(){
   pinMode(LIM_Y_MIN,INPUT);
   pinMode(LIM_Y_MAX,INPUT);
   
-  pinMode(ENABLE_CONTAINER_READ,INPUT);
+  // // DEFINIR SENSORES DE FIM DE CURSO COMO PINOS DE INTERRUPÇÃO
+  // pinMode(LIM_X_MIN, INPUT_PULLUP); // Define o pino como entrada com resistor de pull-up interno
+  // pinMode(LIM_X_MAX, INPUT_PULLUP);
+  // pinMode(LIM_Y_MIN, INPUT_PULLUP);
+  // pinMode(LIM_Y_MAX, INPUT_PULLUP);
+  // attachInterrupt(digitalPinToInterrupt(LIM_X_MIN), lim_min_x_interruption, RISING); // Configura a interrupção
+  // attachInterrupt(digitalPinToInterrupt(LIM_X_MAX), lim_max_x_interruption, RISING);
+  // attachInterrupt(digitalPinToInterrupt(LIM_Y_MIN), lim_min_y_interruption, RISING);
+  // attachInterrupt(digitalPinToInterrupt(LIM_Y_MAX), lim_max_x_interruption, RISING);
   
-  //move_to_initial_position();
+  // ESTADO DE SETUP
+  // MOVER O CARRO PARA A POSICAO INICIAL (0, 0)
+  // DEPOIS MOVER PARA O CENTRO DA PONTE PARA SE TER VISAO DOS CONTAINERS
   move_to_central_position();
   
-  delay(1000);
+  delay(100);
 }
 
 void loop(){
   
   // ESTADO INICIAL
-  // AGUARDANDO COMANDO PARA INICIAR BUSCA DE CONTAINER
+  // AGUARDANDO COMANDO PARA INICIAR A BUSCA DE CONTAINERS
   int comand_identified = 0;
-  int start_comand = 0;
+  int start_comand 		= 0;
+  
   String str = "";
   
-  Serial.println("Aguardando comando pela Serial para iniciar... (begin)");
+  Serial.println("Aguardando comando pela Serial para iniciar a busca... (begin)");
   
   while(!start_comand){
    	while (Serial.available() > 0) { 	// Enquanto houver dados disponíveis na serial
@@ -142,17 +148,17 @@ void loop(){
     comand_identified = 0;
   }
   
-  delay(500);
+  delay(100);
   
-  ///////////////////////////////////////////////////
+  ///////////////////////////////////////////////////////////////////////////////////
   
-  // ESTADO DA BUSCA DO CONTAINER SELECIONADO
+  // ESTADO DE BUSCA DO CONTAINER SELECIONADO
   // AS INFORMAÇÕES RECEBIDAS AQUI DEVEM SER NO FORMATO
-  
-  //MUDAR PARA 4 DIGITOS CADA POR CAUSA DO SINAL NEGATIVO
-  
-  // "xxxyyy", ONDE OS 3 PRIMEIROS DIGITOS REPRESENTAM O
-  // DELTA_X RECEBIDO, E OS 3 ULTIMOS O DELTA_Y
+  // "sxxxzyyy", ONDE:
+  // s é o sinal de delta_x (+ ou -)
+  // xxx são os 3 caracteres de delta_x
+  // z é o sinal de delta_y (+ ou -)
+  // yyy são os 3 caracteres de delta_y
   int container_centralized = 0;
   str = "";
   
@@ -162,11 +168,9 @@ void loop(){
   unsigned long tempo_inicio_y = millis(); 	// Salva o tempo de início de centralização em y
   unsigned long tempo_decorrido_x = 0; 		// Variável para armazenar o tempo decorrido de centralização em x
   unsigned long tempo_decorrido_y = 0; 		// Variável para armazenar o tempo decorrido de centralização em y
-
   
   while(!container_centralized){
-    
-    // SETAR VELOCIDADE DOS MOTORES DE TRANSLAÇÃO
+    // SETAR VELOCIDADE DOS MOTORES DE TRANSLAÇÃO DE ACORDO COM O POTENCIOMETRO
     speed();
 
    	while (Serial.available() > 0) { 	// Enquanto houver dados disponíveis na serial
@@ -177,10 +181,11 @@ void loop(){
     }
       
     if(comand_identified){
+      // VERIFICAR COMANDO
       Serial.println(str);
       
-      String str_delta_x = str.substring(0, 4); // Extrai os primeiros 3 caracteres (delta_x)
-      String str_delta_y = str.substring(4, 8); // Extrai os próximos 3 caracteres (delta_y)
+      String str_delta_x = str.substring(0, 4); // Extrai os primeiros 4 caracteres (delta_x)
+      String str_delta_y = str.substring(4, 8); // Extrai os próximos 4 caracteres (delta_y)
 
       // Converte as strings para números inteiros
       delta_x = str_delta_x.toInt();
@@ -273,27 +278,26 @@ void loop(){
         Serial.println("Ainda nao chegou no centro do container...");
       }
        
+      // Reset the variables 
       str = "";
       comand_identified = 0;
-      // Reset reading index 
       idx = 0;
     }
     
     delay(10);
   }
   
-  delay(500);
-  ///////////////////////////////////////////////////////
+  delay(100);
   
-  ///////////////////////////////////////////////////////
+  ///////////////////////////////////////////////////////////////////////////////////
+  
   // ESTADO DE IÇAMENTO DA CARGA
   Serial.println("Icando carga...");
   pegar_carga_e_icar();
   Serial.println("Carga icada");
-  ///////////////////////////////////////////////////////
   
+  ///////////////////////////////////////////////////////////////////////////////////
   
-  ////////////////////////////////////////////////////////
   // ESTADO DE CARREGAMENTO DO CONTAINER PARA O CARRINHO AUTÔNOMO
   Serial.print("Tempo decorrido x: ");
   Serial.println(tempo_decorrido_x);
@@ -302,12 +306,13 @@ void loop(){
   
   Serial.println("Levando container para o carrinho...");
   
-  if(tempo_decorrido_x <= (tempo_decorrido_y + TEMPO_CENTRO_PONTE_ATE_CARRINHO)){
+  if(tempo_decorrido_x <= tempo_decorrido_y + TEMPO_CENTRO_PONTE_ATE_CARRINHO){
+    
     move_1_backward_2_backward();
   	delay(tempo_decorrido_x);
     
     move_1_stop_2_backward();
-  	delay((tempo_decorrido_y + TEMPO_CENTRO_PONTE_ATE_CARRINHO) - tempo_decorrido_x);
+  	delay(tempo_decorrido_y + TEMPO_CENTRO_PONTE_ATE_CARRINHO - tempo_decorrido_x);
   }
   else{
     move_1_backward_2_backward();
@@ -319,85 +324,35 @@ void loop(){
  
   move_1_stop_2_stop();
   
-  ///////////////////////////////////////////////////////
+  ///////////////////////////////////////////////////////////////////////////////////
   
-  ////////////////////////////////////////////////////////
   // ESTADO DE COLOCAR O CONTAINER NO CARRINHO AUTÔNOMO
-	
   abaixar_carga_e_soltar();
   
-  ///////////////////////////////////////////////////////
+  ///////////////////////////////////////////////////////////////////////////////////
   
-  ////////////////////////////////////////////////////////
   // ESTADO DE VOLTAR A PONTE PARA A POSIÇÃO CENTRAL
-	
   move_1_stop_2_forward();
   delay(TEMPO_CENTRO_PONTE_ATE_CARRINHO);
   move_1_stop_2_stop();
   
-  ///////////////////////////////////////////////////////
+  ///////////////////////////////////////////////////////////////////////////////////
   
-  // VERIFICAR OS SENSORES DE FIM DE CURSO
-  lim_x_min = digitalRead(LIM_X_MIN);
-  lim_x_max = digitalRead(LIM_X_MAX);
-  lim_y_min = digitalRead(LIM_Y_MIN);
-  lim_y_max = digitalRead(LIM_Y_MAX);
+  // // VERIFICAR OS SENSORES DE FIM DE CURSO
+  // lim_x_min = digitalRead(LIM_X_MIN);
+  // lim_x_max = digitalRead(LIM_X_MAX);
+  // lim_y_min = digitalRead(LIM_Y_MIN);
+  // lim_y_max = digitalRead(LIM_Y_MAX);
   
-  Serial.print("lim_x_min: ");
-  Serial.println(lim_x_min);
-  Serial.print("lim_x_max: ");
-  Serial.println(lim_x_max);
-  Serial.print("lim_y_min: ");
-  Serial.println(lim_y_min);
-  Serial.print("lim_y_max: ");
-  Serial.println(lim_y_max);
-  Serial.println();
-  
-  // DIRECAO DOS MOTORES DE TRANSLAÇÃO (HORARIO, PARADO, ANTI-HORARIO)
-  // userInput1 = analogRead(MOVIMENTO_MOT_1);
-  // userInput2 = analogRead(MOVIMENTO_MOT_2);
-  
-  // if(userInput1 < 400){
-  //   if(userInput2 < 400){
-  //     move_1_forward_2_forward();
-  //   }
-  //   else if(userInput2 < 800){
-  //     move_1_forward_2_stop();
-  //   }
-  //   else{
-  //     move_1_forward_2_backward();
-  //   }
-  // }
-  // else if(userInput1 < 800){
-  //   if(userInput2 < 400){
-  //     move_1_stop_2_forward();
-  //   }
-  //   else if(userInput2 < 800){
-  //     move_1_stop_2_stop();
-  //     pegar_carga_e_icar();
-  //   }
-  //   else{
-  //     move_1_stop_2_backward();
-  //   }
-  // }
-  // else{
-  //   if(userInput2 < 400){
-  //     move_1_backward_2_forward();
-  //   }
-  //   else if(userInput2 < 800){
-  //     move_1_backward_2_stop();
-  //   }
-  //   else{
-  //     move_1_backward_2_backward();
-  //   }
-  // }
-  
-  // // SE A DIRECAO DOS DOIS FOR "PARADO" NAO PRECISAMOS FAZE NADA ENQUANTO NAO SAIR DESSE ESTADO
-  // while( userInput1 > 400 && userInput1 < 800 && userInput2 > 400 && userInput2 < 800){
-  //   userInput1 = analogRead(MOVIMENTO_MOT_1);
-  // 	userInput2 = analogRead(MOVIMENTO_MOT_2);
-  //   delay(100);
-  // }
+  // Serial.print("lim_x_min: ");
+  // Serial.println(lim_x_min);
+  // Serial.print("lim_x_max: ");
+  // Serial.println(lim_x_max);
+  // Serial.print("lim_y_min: ");
+  // Serial.println(lim_y_min);
+  // Serial.print("lim_y_max: ");
+  // Serial.println(lim_y_max);
+  // Serial.println();
   
   delay(100);
 }
@@ -410,9 +365,10 @@ void speed(){
 }
 
 void move(int in1_, int in2_, int in3_, int in4_) {
+ // MOTOR 1 - x
  digitalWrite(IN1, in1_);
  digitalWrite(IN2, in2_);
- 
+ // MOTOR 2 - y
  digitalWrite(IN3, in3_);
  digitalWrite(IN4, in4_);
 }
@@ -520,4 +476,21 @@ void abaixar_carga_e_soltar(){
   servo.write(VALOR_PWM_SERVO360_PARADO + VELOCIDADE_SERVO); // sentido anti-horário
   delay(TEMPO_ABAIXAR_ELETROIMA);
   servo.write(VALOR_PWM_SERVO360_PARADO);
+}
+
+void lim_min_x_interruption(){
+  move_1_stop_2_stop();  
+  move_to_central_position();
+}
+void lim_max_x_interruption(){
+  move_1_stop_2_stop();
+  move_to_central_position();
+}
+void lim_min_y_interruption(){
+  move_1_stop_2_stop();
+  move_to_central_position();
+}
+void lim_max_y_interruption(){
+  move_1_stop_2_stop();
+  move_to_central_position();
 }
