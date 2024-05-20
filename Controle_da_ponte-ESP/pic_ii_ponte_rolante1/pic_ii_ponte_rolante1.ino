@@ -1,39 +1,36 @@
-#include <Servo.h>
+#include <ESP32Servo.h>
 
-#define VALOR_PWM_SERVO360_PARADO 				      93
-#define VELOCIDADE_SERVO 						            5
+// SETUP SERVO
+#define VALOR_PARADO_SERVO 				      93
+#define VELOCIDADE_SERVO 						    5
+#define SERVO 									        23
+Servo servo;
+
+// SETUP ELETR0ÍMÃ
+#define ELETROIMA 	                    22
+
+// OUTRAS VARIÁVEIS DE SETUP
 #define TEMPO_ABAIXAR_ELETROIMA 				        3000
 #define RANGE_ERRO_PERMITIDO_POSICAO_CONTAINER 	20
 #define TEMPO_CENTRO_PONTE_ATE_CARRINHO 		    5000
-#define SERVO 									                A0
-Servo servo;
 
-#define EN_A		5
-#define IN1  		7
-#define IN2			6
 
-#define EN_B 		3
-#define IN3 		4
-#define IN4 		2
+// SETUP MOTORES
+#define EN_A		19
+#define IN1  		18
+#define IN2			15
 
-#define ELETROIMA 	8
+#define EN_B 		17
+#define IN3 		16
+#define IN4 		4
 
+#define VELOCIDADE_MOT_MOV 	0
+
+// SENSORES DE FIM DE CURSO
 #define LIM_X_MIN  	12
-#define LIM_X_MAX   11
-#define LIM_Y_MIN   10
-#define LIM_Y_MAX   9
-
-#define VELOCIDADE_MOT_MOV 	A1
-#define MOVIMENTO_MOT_1		  A2
-#define MOVIMENTO_MOT_2 	  A3
-
-#define MAX_BUFF_LEN        255 
-#define CMD_BUFF_LEN        6
-
-// Globals
-char c; 					// IN char
-char str[CMD_BUFF_LEN];
-uint8_t idx = 0; 			// Reading index
+#define LIM_X_MAX   14
+#define LIM_Y_MIN   27
+#define LIM_Y_MAX   26
 
 int delta_x = 0;
 int delta_y = 0;
@@ -43,7 +40,7 @@ int lim_x_max = 0;
 int lim_y_min = 0;
 int lim_y_max = 0;
 
-/////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////// FUNCTIONS HEADERS ///////////////////////////////////
 void speed();
 void move(int in1_, int in2_, int in3_, int in4_);
 void move_1_forward_2_forward();
@@ -60,6 +57,8 @@ void move_to_central_position();
 void pegar_carga_e_icar();
 void abaixar_carga_e_soltar();
 
+
+// INTERRUPT FUNCTIONS
 void lim_min_x_interruption();
 void lim_max_x_interruption();
 void lim_min_y_interruption();
@@ -74,55 +73,50 @@ void setup(){
   pinMode(IN1, OUTPUT);
   pinMode(IN2, OUTPUT);
   
-  pinMode(EN_B,OUTPUT);
-  pinMode(IN3,OUTPUT);
-  pinMode(IN4,OUTPUT);
+  pinMode(EN_B, OUTPUT);
+  pinMode(IN3, OUTPUT);
+  pinMode(IN4, OUTPUT);
   
-  pinMode(VELOCIDADE_MOT_MOV,INPUT);
-  pinMode(MOVIMENTO_MOT_1,INPUT);
-  pinMode(MOVIMENTO_MOT_2,INPUT);
+  pinMode(VELOCIDADE_MOT_MOV, INPUT);
   
   pinMode(ELETROIMA, OUTPUT);
   
+  // DEFINIR SENSORES DE FIM DE CURSO COMO PINOS DE INTERRUPÇÃO
   pinMode(LIM_X_MIN,INPUT);
   pinMode(LIM_X_MAX,INPUT);
   pinMode(LIM_Y_MIN,INPUT);
   pinMode(LIM_Y_MAX,INPUT);
-  
-  // // DEFINIR SENSORES DE FIM DE CURSO COMO PINOS DE INTERRUPÇÃO
-  // pinMode(LIM_X_MIN, INPUT_PULLUP); // Define o pino como entrada com resistor de pull-up interno
-  // pinMode(LIM_X_MAX, INPUT_PULLUP);
-  // pinMode(LIM_Y_MIN, INPUT_PULLUP);
-  // pinMode(LIM_Y_MAX, INPUT_PULLUP);
-  // attachInterrupt(digitalPinToInterrupt(LIM_X_MIN), lim_min_x_interruption, RISING); // Configura a interrupção
-  // attachInterrupt(digitalPinToInterrupt(LIM_X_MAX), lim_max_x_interruption, RISING);
-  // attachInterrupt(digitalPinToInterrupt(LIM_Y_MIN), lim_min_y_interruption, RISING);
-  // attachInterrupt(digitalPinToInterrupt(LIM_Y_MAX), lim_max_x_interruption, RISING);
+
+  // Configuração das interrupções
+  // attachInterrupt(LIM_X_MIN, lim_min_x_interruption, RISING);
+  // attachInterrupt(LIM_X_MAX, lim_max_x_interruption, RISING);
+  // attachInterrupt(LIM_Y_MIN, lim_min_y_interruption, RISING);
+  // attachInterrupt(LIM_Y_MAX, lim_max_x_interruption, RISING);
   
   // ESTADO DE SETUP
-  // MOVER O CARRO PARA A POSICAO INICIAL (0, 0)
+  // MOVE O CARRO PARA A POSICAO INICIAL (0, 0)
   // DEPOIS MOVER PARA O CENTRO DA PONTE PARA SE TER VISAO DOS CONTAINERS
-  move_to_central_position();
+  // move_to_central_position();
   
   delay(100);
 }
 
 void loop(){
   
+  ///////////////////////////////////////////////////////////////////////////////////
   // ESTADO INICIAL
   // AGUARDANDO COMANDO PARA INICIAR A BUSCA DE CONTAINERS
   int comand_identified = 0;
-  int start_comand 		= 0;
+  int start_comand 		  = 0;
   
   String str = "";
   
   Serial.println("Aguardando comando pela Serial para iniciar a busca... (begin)");
   
   while(!start_comand){
-   	while (Serial.available() > 0) { 	// Enquanto houver dados disponíveis na serial
-      char c = Serial.read(); 			// Lê um caractere da serial
-      str += c; 						// Adiciona o caractere à string
-      delay(10); 						// Pequena pausa para garantir que todos os dados sejam lidos
+   	if (Serial.available() > 0) { 	// Lê os dados se houver dados disponíveis na serial
+      str = Serial.readString();    // Lê os dados recebidos como string
+      str.trim();                   // Remove espaços em branco do início e do fim da string
       comand_identified = 1;
     }
       
@@ -141,20 +135,18 @@ void loop(){
       }
 
       // Reset reading index 
-      idx = 0;
+      str = "";
     }
 
     delay(5);
     comand_identified = 0;
   }
   
-  delay(100);
-  
   ///////////////////////////////////////////////////////////////////////////////////
   
   // ESTADO DE BUSCA DO CONTAINER SELECIONADO
   // AS INFORMAÇÕES RECEBIDAS AQUI DEVEM SER NO FORMATO
-  // "sxxxzyyy", ONDE:
+  // "sxxx zyyy", ONDE:
   // s é o sinal de delta_x (+ ou -)
   // xxx são os 3 caracteres de delta_x
   // z é o sinal de delta_y (+ ou -)
@@ -166,17 +158,16 @@ void loop(){
   
   unsigned long tempo_inicio_x = millis(); 	// Salva o tempo de início de centralização em x
   unsigned long tempo_inicio_y = millis(); 	// Salva o tempo de início de centralização em y
-  unsigned long tempo_decorrido_x = 0; 		// Variável para armazenar o tempo decorrido de centralização em x
-  unsigned long tempo_decorrido_y = 0; 		// Variável para armazenar o tempo decorrido de centralização em y
+  unsigned long tempo_decorrido_x = 0; 		  // Variável para armazenar o tempo decorrido de centralização em x
+  unsigned long tempo_decorrido_y = 0; 		  // Variável para armazenar o tempo decorrido de centralização em y
   
   while(!container_centralized){
     // SETAR VELOCIDADE DOS MOTORES DE TRANSLAÇÃO DE ACORDO COM O POTENCIOMETRO
     speed();
 
-   	while (Serial.available() > 0) { 	// Enquanto houver dados disponíveis na serial
-      char c = Serial.read(); 			// Lê um caractere da serial
-      str += c; 						// Adiciona o caractere à string
-      delay(10); 						// Pequena pausa para garantir que todos os dados sejam lidos
+    if (Serial.available() > 0) { 	// Lê os dados se houver dados disponíveis na serial
+      str = Serial.readString();    // Lê os dados recebidos como string
+      str.trim();                   // Remove espaços em branco do início e do fim da string
       comand_identified = 1;
     }
       
@@ -184,8 +175,14 @@ void loop(){
       // VERIFICAR COMANDO
       Serial.println(str);
       
+      // AS INFORMAÇÕES RECEBIDAS AQUI DEVEM SER NO FORMATO
+      // "sxxx zyyy", ONDE:
+      // s é o sinal de delta_x (+ ou -)
+      // xxx são os 3 caracteres de delta_x
+      // z é o sinal de delta_y (+ ou -)
+      // yyy são os 3 caracteres de delta_y
       String str_delta_x = str.substring(0, 4); // Extrai os primeiros 4 caracteres (delta_x)
-      String str_delta_y = str.substring(4, 8); // Extrai os próximos 4 caracteres (delta_y)
+      String str_delta_y = str.substring(5, 9); // Extrai os próximos  4 caracteres (delta_y)
 
       // Converte as strings para números inteiros
       delta_x = str_delta_x.toInt();
@@ -196,73 +193,51 @@ void loop(){
       Serial.print("delta_y: ");
       Serial.println(delta_y);
       
-      // CÂMERA ESTÁ À ESQUERDA DO CENTRO DO CONTAINER
-      if(delta_x > RANGE_ERRO_PERMITIDO_POSICAO_CONTAINER){
-        
-        // CÂMERA ESTÁ ABAIXO DO CENTRO DO CONTAINER
-        if(delta_y > RANGE_ERRO_PERMITIDO_POSICAO_CONTAINER){
-          
-			move_1_forward_2_forward();
-          
-        } // CÂMERA ESTÁ ACIMA DO CENTRO DO CONTAINER
-        else if(delta_y < - RANGE_ERRO_PERMITIDO_POSICAO_CONTAINER){
+      if(delta_x > RANGE_ERRO_PERMITIDO_POSICAO_CONTAINER){             // CÂMERA ESTÁ À ESQUERDA DO CENTRO DO CONTAINER
 
-          move_1_forward_2_backward();
-          
-        } // CÂMERA ESTÁ CENTRALIZADA NO CONTAINER NO SENTIDO VERTICAL
-        else{
-          Serial.println("Centralizado em y");
-          if(tempo_decorrido_y == 0){
-            tempo_decorrido_y = millis() - tempo_inicio_y;
-          }
-          
-          move_1_forward_2_stop();
-          
+        if(delta_y > RANGE_ERRO_PERMITIDO_POSICAO_CONTAINER){           // CÂMERA ESTÁ ABAIXO DO CENTRO DO CONTAINER
+			    move_1_forward_2_forward();
         }
-      } // CÂMERA ESTÁ À DIREITA DO CENTRO DO CONTAINER
-      else if(delta_x < - RANGE_ERRO_PERMITIDO_POSICAO_CONTAINER){
-        // CÂMERA ESTÁ ABAIXO DO CENTRO DO CONTAINER
-        if(delta_y > RANGE_ERRO_PERMITIDO_POSICAO_CONTAINER){
-          
-          move_1_backward_2_forward();
-
-        } // CÂMERA ESTÁ ACIMA DO CENTRO DO CONTAINER
-        else if(delta_y < - RANGE_ERRO_PERMITIDO_POSICAO_CONTAINER){
-          
-          move_1_backward_2_backward();
-
-        } // CÂMERA ESTÁ CENTRALIZADA NO CONTAINER NO SENTIDO VERTICAL
-        else{
+        else if(delta_y < - RANGE_ERRO_PERMITIDO_POSICAO_CONTAINER){    // CÂMERA ESTÁ ACIMA DO CENTRO DO CONTAINER
+          move_1_forward_2_backward();
+        }
+        else{                                                           // CÂMERA ESTÁ CENTRALIZADA NO CONTAINER NO SENTIDO VERTICAL
           Serial.println("Centralizado em y");
-          
           if(tempo_decorrido_y == 0){
             tempo_decorrido_y = millis() - tempo_inicio_y;
           }
-          
+          move_1_forward_2_stop();
+        }
+      }
+      else if(delta_x < - RANGE_ERRO_PERMITIDO_POSICAO_CONTAINER){      // CÂMERA ESTÁ À DIREITA DO CENTRO DO CONTAINER
+        
+        if(delta_y > RANGE_ERRO_PERMITIDO_POSICAO_CONTAINER){           // CÂMERA ESTÁ ABAIXO DO CENTRO DO CONTAINER
+          move_1_backward_2_forward();
+        }
+        else if(delta_y < - RANGE_ERRO_PERMITIDO_POSICAO_CONTAINER){    // CÂMERA ESTÁ ACIMA DO CENTRO DO CONTAINER
+          move_1_backward_2_backward();
+        }
+        else{                                                           // CÂMERA ESTÁ CENTRALIZADA NO CONTAINER NO SENTIDO VERTICAL
+          Serial.println("Centralizado em y");
+          if(tempo_decorrido_y == 0){
+            tempo_decorrido_y = millis() - tempo_inicio_y;
+          }
           move_1_backward_2_stop();
         }
-        
-      } // CÂMERA ESTÁ CENTRALIZADA NO CONTAINER NO SENTIDO HORIZONTAL
-      else{
-        
+      }
+      else{                                                             // CÂMERA ESTÁ CENTRALIZADA NO CONTAINER NO SENTIDO HORIZONTAL
         Serial.println("Centralizado em x");
-        
         if(tempo_decorrido_x == 0){
           tempo_decorrido_x = millis() - tempo_inicio_x;
         }
         
-        // CÂMERA ESTÁ ABAIXO DO CENTRO DO CONTAINER
-        if(delta_y > RANGE_ERRO_PERMITIDO_POSICAO_CONTAINER){
-
-          move_1_stop_2_forward();
-          
-        } // CÂMERA ESTÁ ACIMA DO CENTRO DO CONTAINER
-        else if(delta_y < - RANGE_ERRO_PERMITIDO_POSICAO_CONTAINER){
-
+        if(delta_y > RANGE_ERRO_PERMITIDO_POSICAO_CONTAINER){           // CÂMERA ESTÁ ABAIXO DO CENTRO DO CONTAINER
+          move_1_stop_2_forward();      
+        }
+        else if(delta_y < - RANGE_ERRO_PERMITIDO_POSICAO_CONTAINER){    // CÂMERA ESTÁ ACIMA DO CENTRO DO CONTAINER
           move_1_stop_2_backward();
-          
-        } // CÂMERA ESTÁ CENTRALIZADA NO CONTAINER NO SENTIDO VERTICAL
-        else{
+        }
+        else{                                                           // CÂMERA ESTÁ CENTRALIZADA EM AMBOS SENTIDOS !!!
           if(tempo_decorrido_y == 0){
             tempo_decorrido_y = millis() - tempo_inicio_y;
           }
@@ -280,14 +255,11 @@ void loop(){
        
       // Reset the variables 
       str = "";
-      comand_identified = 0;
-      idx = 0;
+      comand_identified = 0; 
     }
     
     delay(10);
   }
-  
-  delay(100);
   
   ///////////////////////////////////////////////////////////////////////////////////
   
@@ -307,7 +279,6 @@ void loop(){
   Serial.println("Levando container para o carrinho...");
   
   if(tempo_decorrido_x <= tempo_decorrido_y + TEMPO_CENTRO_PONTE_ATE_CARRINHO){
-    
     move_1_backward_2_backward();
   	delay(tempo_decorrido_x);
     
@@ -321,17 +292,21 @@ void loop(){
     move_1_backward_2_stop();
   	delay(tempo_decorrido_x - (tempo_decorrido_y + TEMPO_CENTRO_PONTE_ATE_CARRINHO));
   }
- 
+  
+  Serial.println("Container centralizado em cima do carrinho");
   move_1_stop_2_stop();
   
   ///////////////////////////////////////////////////////////////////////////////////
   
   // ESTADO DE COLOCAR O CONTAINER NO CARRINHO AUTÔNOMO
+  Serial.println("Colocando container em cima do carrinho...");
   abaixar_carga_e_soltar();
   
   ///////////////////////////////////////////////////////////////////////////////////
   
   // ESTADO DE VOLTAR A PONTE PARA A POSIÇÃO CENTRAL
+  Serial.println("Movendo carro de volta para a posição central");
+
   move_1_stop_2_forward();
   delay(TEMPO_CENTRO_PONTE_ATE_CARRINHO);
   move_1_stop_2_stop();
@@ -358,10 +333,10 @@ void loop(){
 }
 
 void speed(){
- int aux = analogRead(VELOCIDADE_MOT_MOV);
- aux = map(aux, 0, 1023, 0 , 255);
- analogWrite(EN_A, aux);
- analogWrite(EN_B, aux);
+  int aux = analogRead(VELOCIDADE_MOT_MOV);
+  aux = map(aux, 0, 4095, 0 , 255);
+  analogWrite(EN_A, aux);
+  analogWrite(EN_B, aux);
 }
 
 void move(int in1_, int in2_, int in3_, int in4_) {
@@ -442,11 +417,14 @@ void move_to_initial_position(){
   }
 }
 
+// PRÉ REQUISITO: CARRINHO ESTAR NA POSIÇÃO (0, 0)
 void move_to_central_position(){
   move_to_initial_position();
   
   Serial.println("Movendo o carro para a posicao central...");
+
   speed();
+
   move_1_forward_2_forward();
   delay(2000);
   move_1_stop_2_forward();
@@ -457,25 +435,25 @@ void move_to_central_position(){
 }
 
 void pegar_carga_e_icar(){
-  servo.write(VALOR_PWM_SERVO360_PARADO - VELOCIDADE_SERVO); // sentido horário
+  servo.write(VALOR_PARADO_SERVO - VELOCIDADE_SERVO); // sentido horário
   delay(TEMPO_ABAIXAR_ELETROIMA);
-  servo.write(VALOR_PWM_SERVO360_PARADO);
+  servo.write(VALOR_PARADO_SERVO);
   digitalWrite(ELETROIMA, HIGH);
   delay(1000);
-  servo.write(VALOR_PWM_SERVO360_PARADO + VELOCIDADE_SERVO); // sentido anti-horário
+  servo.write(VALOR_PARADO_SERVO + VELOCIDADE_SERVO); // sentido anti-horário
   delay(TEMPO_ABAIXAR_ELETROIMA);
-  servo.write(VALOR_PWM_SERVO360_PARADO);
+  servo.write(VALOR_PARADO_SERVO);
 }
 
 void abaixar_carga_e_soltar(){
-  servo.write(VALOR_PWM_SERVO360_PARADO - VELOCIDADE_SERVO); // sentido horário
+  servo.write(VALOR_PARADO_SERVO - VELOCIDADE_SERVO); // sentido horário
   delay(TEMPO_ABAIXAR_ELETROIMA);
-  servo.write(VALOR_PWM_SERVO360_PARADO);
+  servo.write(VALOR_PARADO_SERVO);
   digitalWrite(ELETROIMA, LOW);
   delay(1000);
-  servo.write(VALOR_PWM_SERVO360_PARADO + VELOCIDADE_SERVO); // sentido anti-horário
+  servo.write(VALOR_PARADO_SERVO + VELOCIDADE_SERVO); // sentido anti-horário
   delay(TEMPO_ABAIXAR_ELETROIMA);
-  servo.write(VALOR_PWM_SERVO360_PARADO);
+  servo.write(VALOR_PARADO_SERVO);
 }
 
 void lim_min_x_interruption(){

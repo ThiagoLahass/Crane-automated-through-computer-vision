@@ -4,12 +4,16 @@ import serial
 import time
 
 #==================== ESP SERIAL COMUNICATION VARIABLES AND FUNCTIONS ====================
-PORT_NAME = 'COM6'
+PORT_NAME = 'COM7'
 
 # read one char (default)
-def read_ser(port, num_char = 1):
-	string = port.read(num_char)
-	return string.decode()
+def read_ser(port, num_char=1):
+    string = port.read(num_char)
+    try:
+        return string.decode('ISO-8859-1')
+    except UnicodeDecodeError as e:
+        print(f"Erro de decodificação: {e}")
+        return ""
 
 # Write whole strings
 def write_ser(port, cmd):
@@ -45,12 +49,12 @@ V_MIN_GREEN = 98
 V_MAX_GREEN = 173
 
 # initial min and max HSV filter to BLUE
-H_MIN_BLUE = 90
-H_MAX_BLUE = 104
-S_MIN_BLUE = 168
-S_MAX_BLUE = 255
-V_MIN_BLUE = 87
-V_MAX_BLUE = 134
+H_MIN_BLUE = 79
+H_MAX_BLUE = 129
+S_MIN_BLUE = 67
+S_MAX_BLUE = 217
+V_MIN_BLUE = 98
+V_MAX_BLUE = 250
 
 # initial min and max HSV filter to YELLOW
 H_MIN_YELLOW = 0
@@ -268,6 +272,25 @@ def main():
             SETUP = True
     #=================== END ESP SERIAL COMUNICATION SETUP ==================
 
+    #==================== ESP SERIAL COMUNICATION SENDING BEGIN COMAND ====================
+
+    # SERIAL COMUNICATION - READ
+    string = read_ser(port, MAX_BUFF_LEN)
+    print(string) #printando após remover o caractere de \n a mais
+
+    time.sleep(2)
+
+    # SERIAL COMUNICATION - WRITE
+    cmd = 'begin'
+    write_ser(port, cmd)
+
+    time.sleep(0.1)
+
+    # SERIAL COMUNICATION - READ
+    string = read_ser(port, MAX_BUFF_LEN)
+    print(string) #printando após remover o caractere de \n a mais
+    #==================== END ESP SERIAL COMUNICATION SENDING BEGIN COMAND ====================
+
     #==================== OBJECT POSITION VARIABLES ====================
     X_CENTER = FRAME_WIDTH / 2
     Y_CENTER = FRAME_HEIGHT / 2
@@ -334,17 +357,19 @@ def main():
             delta_y = int (Y_CENTER - y)
 
             # Preenchimento com zeros à esquerda para garantir 3 dígitos
-            delta_x_str = str(delta_x).zfill(3)
-            delta_y_str = str(delta_y).zfill(3)
+            delta_x_str = str(delta_x).zfill(4)
+            delta_y_str = str(delta_y).zfill(4)
 
             # SERIAL COMUNICATION - WRITE
             cmd = f'{delta_x_str} {delta_y_str}'
             write_ser(port, cmd)
 
+            time.sleep(0.1)
+
             # SERIAL COMUNICATION - READ
-            # string = read_ser(port, MAX_BUFF_LEN)
-            # if(len(string)):
-            #     print(string)
+            string = read_ser(port, MAX_BUFF_LEN)
+            if(len(string)):
+                print(string[0:-1]) #printando após remover o caractere de \n a mais
 
         # Exibição das imagens
         cv2.imshow("Image Original", img_original)
