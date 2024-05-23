@@ -3,23 +3,38 @@ import numpy as np
 import serial
 import time
 
-#==================== ESP SERIAL COMUNICATION VARIABLES AND FUNCTIONS ====================
+#==================== ESP SERIAL COMMUNICATION VARIABLES AND FUNCTIONS ====================
 PORT_NAME = 'COM7'
 
-# read one char (default)
 def read_ser(port, num_char=1):
+    """
+    Reads a specified number of characters from the serial port.
+
+    Args:
+        port: The serial port instance.
+        num_char (int): Number of characters to read. Default is 1.
+
+    Returns:
+        str: The read characters, decoded as UTF-8. Returns an empty string if a decoding error occurs.
+    """
     string = port.read(num_char)
     try:
         return string.decode('utf-8')
     except UnicodeDecodeError as e:
-        print(f"Erro de decodificação: {e}")
+        print(f"Decoding error: {e}")
         return ""
 
-# Write whole strings
 def write_ser(port, cmd):
-	cmd = cmd + '\n'
-	port.write(cmd.encode())
-#==================== END ESP SERIAL COMUNICATION VARIABLES AND FUNCTIONS ====================
+    """
+    Writes a command to the serial port.
+
+    Args:
+        port: The serial port instance.
+        cmd (str): The command to send to the serial port.
+    """
+    cmd = cmd + '\n'
+    port.write(cmd.encode())
+#==================== END ESP SERIAL COMMUNICATION VARIABLES AND FUNCTIONS ====================
 
 #==================== OBJECT IDENTIFIER AND TRACKING VARIABLES AND FUNCTIONS ====================
 # initial min and max HSV filter values.
@@ -65,12 +80,12 @@ V_MIN_YELLOW = 241
 V_MAX_YELLOW = 255
 # ============= END TEST BEFORE USE ==========
 
-RED		= 0
-GREEN	= 1
-BLUE	= 2
-YELLOW	= 3
+RED     = 0
+GREEN   = 1
+BLUE    = 2
+YELLOW  = 3
 
-COLORS_NAME = ["RED", "GRENN", "BLUE", "YELLOW"]
+COLORS_NAME = ["RED", "GREEN", "BLUE", "YELLOW"]
 
 COLOR = 0
 
@@ -97,55 +112,106 @@ FRAME_HEIGHT    = 480
 MAX_NUM_OBJECTS = 5
 
 # minimum and maximum object area
-MIN_OBJECT_AREA = 20 * 20                                   # AJUSTAR QUANDO TIVER FAZENDO A DETECÇÃO DE CONTAINERS NA PONTE ROLANTE
+MIN_OBJECT_AREA = 20 * 20                                   # ADJUST WHEN DOING CONTAINER DETECTION ON CRANE
 MAX_OBJECT_AREA = int(FRAME_HEIGHT * FRAME_WIDTH / 1.5)
 
 trackbar_window_name = "Trackbars"
 
 def create_trackbars():
-    # create window for trackbars
+    """
+    Creates a trackbars window to adjust HSV values.
+    """
     cv2.namedWindow(trackbar_window_name, cv2.WINDOW_NORMAL)
-
-    # create trackbars and insert them into window
     cv2.createTrackbar("Hue Min", trackbar_window_name, H_MIN, H_MAX, onTrackbar_H_MIN)
     cv2.createTrackbar("Hue Max", trackbar_window_name, H_MAX, H_MAX, onTrackbar_H_MAX)
     cv2.createTrackbar("Sat Min", trackbar_window_name, S_MIN, S_MAX, onTrackbar_S_MIN)
     cv2.createTrackbar("Sat Max", trackbar_window_name, S_MAX, S_MAX, onTrackbar_S_MAX)
     cv2.createTrackbar("Val Min", trackbar_window_name, V_MIN, V_MAX, onTrackbar_V_MIN)
     cv2.createTrackbar("Val Max", trackbar_window_name, V_MAX, V_MAX, onTrackbar_V_MAX)
-    #cv2.createTrackbar("Color", trackbar_window_name, COLOR, len(my_colors_thresholds) - 1, onTrackbar_COLOR)
 
 def onTrackbar_H_MIN(value):
+    """
+    Callback to adjust Hue minimum value.
+
+    Args:
+        value (int): New minimum Hue value.
+    """
     global H_MIN
     H_MIN = value
 
 def onTrackbar_H_MAX(value):
+    """
+    Callback to adjust Hue maximum value.
+
+    Args:
+        value (int): New maximum Hue value.
+    """
     global H_MAX
     H_MAX = value
 
 def onTrackbar_S_MIN(value):
+    """
+    Callback to adjust Saturation minimum value.
+
+    Args:
+        value (int): New minimum Saturation value.
+    """
     global S_MIN
     S_MIN = value
 
 def onTrackbar_S_MAX(value):
+    """
+    Callback to adjust Saturation maximum value.
+
+    Args:
+        value (int): New maximum Saturation value.
+    """
     global S_MAX
     S_MAX = value
 
 def onTrackbar_V_MIN(value):
+    """
+    Callback to adjust Value minimum value.
+
+    Args:
+        value (int): New minimum Value value.
+    """
     global V_MIN
     V_MIN = value
 
 def onTrackbar_V_MAX(value):
+    """
+    Callback to adjust Value maximum value.
+
+    Args:
+        value (int): New maximum Value value.
+    """
     global V_MAX
     V_MAX = value
 
 def onTrackbar_COLOR(value):
+    """
+    Callback to adjust the selected container color.
+
+    Args:
+        value (int): New color index selected.
+    """
     global COLOR
     COLOR = value
 
 def clean_noise_morph_ops(img):
-    # create structuring element that will be used to "dilate" and "erode" image.
+    """
+    Applies morphological operations to remove noise from the image.
+
+    Args:
+        img (numpy.ndarray): Input image.
+
+    Returns:
+        numpy.ndarray: Image after noise removal.
+    """
+    # create structuring element that will be used to "erode" and "dilate" image to be nicely visible
 	# the element chosen here is a 3px by 3px rectangle
+    # remove some noise
     erodeElement = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
     # dilate with larger element so make sure object is nicely visible
     dilateElement = cv2.getStructuringElement(cv2.MORPH_RECT, (8, 8))
@@ -155,49 +221,18 @@ def clean_noise_morph_ops(img):
 
     return img
 
-def track_filtered_object(color, img_mask, img_original):
-    imgTemp = img_mask.copy()
+# use some of the openCV drawing functions to draw crosshairs on tracked image  
+def draw_crosshair(x, y, color, img):
+    """
+    Draws a crosshair on the image around the specified coordinates.
 
-    # find contours of filtered image using openCV findContours function
-    contours, hierarchy = cv2.findContours(imgTemp, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
-
-    ref_area = 0
-    object_found = False
-
-    # use moments method to find our filtered object
-    for index, cnt in enumerate(contours):
-        area = cv2.contourArea(cnt)
-
-        # if the area is less than 20 px by 20px then it is probably just noise
-		# if the area is the same as the 3/2 of the image size, probably just a bad filter
-		# we only want the object with the largest area so we safe a reference area each
-		# iteration and compare it to the area in the next iteration.
-
-        if area > MIN_OBJECT_AREA and area < MAX_OBJECT_AREA and area > ref_area:
-            moment = cv2.moments(cnt)
-            x = int(moment["m10"] / moment["m00"])
-            y = int(moment["m01"] / moment["m00"])
-            object_found = True
-            ref_area = area
-
-            cv2.circle(img_original, (x, y), 20, my_colors_values[color], 2)
-            cv2.line(img_original, (x, y - 25), (x, y + 25), my_colors_values[color], 2)
-            cv2.line(img_original, (x - 25, y), (x + 25, y), my_colors_values[color], 2)
-
-            cv2.putText(img_original, f"{x},{y}", (x, y + 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
-
-    if object_found:
-        # let user know you found an object
-        cv2.putText(img_original, "Tracking Object", (0, 50), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 255, 0), 2)
-        drawCrosshairs(x, y, color, img_original)
-        return (x,y)
-        
-    else:
-        cv2.putText(img_original, "Too much noise! Adjust filter", (0, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
-        return (0,0)
+    Args:
+        x (int): x coordinate of the crosshair center.
+        y (int): y coordinate of the crosshair center.
+        color (int): Index of the crosshair color.
+        img (numpy.ndarray): Image to draw the crosshair on.
+    """
     
-def drawCrosshairs(x, y, color, img):
-    # use some of the openCV drawing functions to draw crosshairs on tracked image
     cv2.circle(img, (x, y), 20, my_colors_values[color], 2)
 
     if y - 25 > 0:
@@ -224,6 +259,17 @@ def drawCrosshairs(x, y, color, img):
 
 
 def get_center_of_nearest_container(img_mask, img_original, color):
+    """
+    Get the center coordinates of the nearest container identified of the especified color.
+
+    Args:
+        img_mask (numpy array): Binary mask image of the containers.
+        img_original (numpy array): Original image.
+        color (int): Index of the color of the container to search.
+
+    Returns:
+        tuple: Tuple containing the x and y coordinates of the center of the nearest container.
+    """
     imgTemp = img_mask.copy()
 
     contours, hierarchy = cv2.findContours(imgTemp, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -252,6 +298,12 @@ def get_center_of_nearest_container(img_mask, img_original, color):
 
 
 def select_color_of_containers():
+    """
+    Prompt the user to select a color for the containers.
+
+    Returns:
+        int: Index corresponding to the selected color.
+    """
     while True:
         print("BACKEND: Qual a cor do container que você deseja?")
         print("Opções:")
@@ -272,6 +324,12 @@ def select_color_of_containers():
             print("Entrada inválida. Por favor, insira um número.")
 
 def select_number_of_containers():
+    """
+    Prompt the user to select the number of containers to search.
+
+    Returns:
+        int: Number of containers to search.
+    """
     while True:
         number_containers = input("BACKEND: Quantos containers você deseja?\n").strip()
         
@@ -287,6 +345,9 @@ def select_number_of_containers():
 #==================== END OBJECT IDENTIFIER AND TRACKING VARIABLES AND FUNCTIONS ====================
 
 def main():
+    """
+    Main function to control the object detection and tracking process.
+    """
     #==================== ESP SERIAL COMUNICATION SETUP ====================
     MAX_BUFF_LEN = 1024
     SETUP 		 = False
@@ -390,33 +451,13 @@ def main():
                         img_mask[i] = clean_noise_morph_ops(img_mask[i])
                     cv2.imshow(COLORS_NAME[i], img_mask[i])
 
-                    # if track_objects and i == COLOR:
-                    #     my_container_point = get_center_of_nearest_container(img_mask[COLOR], img_original, COLOR)
-                    #     if my_container_point != (0, 0):
-                    #         drawCrosshairs(my_container_point[0], my_container_point[1], COLOR, img_original)
-
-                # #Definição dos valores mínimos e máximos para a máscara HSV
-                # lower = np.array([H_MIN, S_MIN, V_MIN])
-                # upper = np.array([H_MAX, S_MAX, V_MAX])
-
-                # lower = np.array([H_MIN_BLUE, S_MIN_BLUE, V_MIN_BLUE])
-                # upper = np.array([H_MAX_BLUE, S_MAX_BLUE, V_MAX_BLUE])
-
-                # # Filtragem da imagem HSV entre os valores e armazenamento na matriz 'img_mask'
-                # img_mask = cv2.inRange(img_HSV, lower, upper)
-
-                # # Operações morfológicas na imagem thresholded para eliminar ruído
-                # # e enfatizar o(s) objeto(s) filtrado(s)
-                # if use_morph_ops:
-                #     img_mask = clean_noise_morph_ops(img_mask)
-
                 # Passagem do frame thresholded para nossa função de rastreamento de objetos
                 # esta função retornará as coordenadas x e y do objeto filtrado
                 if track_objects:
                     # (x,y) = track_filtered_object(GREEN, img_mask, img_original)
                     (x,y) = get_center_of_nearest_container(img_mask[COLOR], img_original, COLOR)
                     if x != 0 and y != 0 :
-                        drawCrosshairs(x, y, COLOR, img_original)
+                        draw_crosshair(x, y, COLOR, img_original)
                     delta_x = int (X_CENTER - x)
                     delta_y = int (Y_CENTER - y)
 
