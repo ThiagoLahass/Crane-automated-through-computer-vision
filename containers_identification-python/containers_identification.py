@@ -10,7 +10,7 @@ PORT_NAME = 'COM7'
 def read_ser(port, num_char=1):
     string = port.read(num_char)
     try:
-        return string.decode('ISO-8859-1')
+        return string.decode('utf-8')
     except UnicodeDecodeError as e:
         print(f"Erro de decodificação: {e}")
         return ""
@@ -31,39 +31,39 @@ S_MAX = 255
 V_MIN = 0
 V_MAX = 255
 
-# ============= BASED ON TESTS ==========
+# ============= TEST BEFORE USE ==========
 # initial min and max HSV filter to RED
-H_MIN_RED = 145
-H_MAX_RED = 182
-S_MIN_RED = 69
-S_MAX_RED = 151
-V_MIN_RED = 202
+H_MIN_RED = 0
+H_MAX_RED = 16
+S_MIN_RED = 11
+S_MAX_RED = 85
+V_MIN_RED = 251
 V_MAX_RED = 255
 
 # initial min and max HSV filter to GREEN
-H_MIN_GREEN = 92
-H_MAX_GREEN = 105
-S_MIN_GREEN = 94
-S_MAX_GREEN = 214
-V_MIN_GREEN = 98
-V_MAX_GREEN = 173
+H_MIN_GREEN = 42
+H_MAX_GREEN = 103
+S_MIN_GREEN = 42
+S_MAX_GREEN = 100
+V_MIN_GREEN = 121
+V_MAX_GREEN = 240
 
 # initial min and max HSV filter to BLUE
-H_MIN_BLUE = 94
-H_MAX_BLUE = 122
-S_MIN_BLUE = 68
-S_MAX_BLUE = 176
-V_MIN_BLUE = 132
-V_MAX_BLUE = 213
+H_MIN_BLUE = 60
+H_MAX_BLUE = 106
+S_MIN_BLUE = 25
+S_MAX_BLUE = 221
+V_MIN_BLUE = 249
+V_MAX_BLUE = 255
 
 # initial min and max HSV filter to YELLOW
-H_MIN_YELLOW = 0
-H_MAX_YELLOW = 49
-S_MIN_YELLOW = 14
-S_MAX_YELLOW = 69
-V_MIN_YELLOW = 157
+H_MIN_YELLOW = 29
+H_MAX_YELLOW = 43
+S_MIN_YELLOW = 0
+S_MAX_YELLOW = 20
+V_MIN_YELLOW = 241
 V_MAX_YELLOW = 255
-# ============= END BASED ON TESTS ==========
+# ============= END TEST BEFORE USE ==========
 
 RED		= 0
 GREEN	= 1
@@ -113,7 +113,7 @@ def create_trackbars():
     cv2.createTrackbar("Sat Max", trackbar_window_name, S_MAX, S_MAX, onTrackbar_S_MAX)
     cv2.createTrackbar("Val Min", trackbar_window_name, V_MIN, V_MAX, onTrackbar_V_MIN)
     cv2.createTrackbar("Val Max", trackbar_window_name, V_MAX, V_MAX, onTrackbar_V_MAX)
-    cv2.createTrackbar("Color", trackbar_window_name, COLOR, len(my_colors_thresholds) - 1, onTrackbar_COLOR)
+    #cv2.createTrackbar("Color", trackbar_window_name, COLOR, len(my_colors_thresholds) - 1, onTrackbar_COLOR)
 
 def onTrackbar_H_MIN(value):
     global H_MIN
@@ -151,11 +151,9 @@ def clean_noise_morph_ops(img):
     dilateElement = cv2.getStructuringElement(cv2.MORPH_RECT, (8, 8))
 
     img = cv2.erode(img, erodeElement)
-    # img = cv2.erode(img, erodeElement)
-
-    # dilate with larger element so make sure object is nicely visible
     img = cv2.dilate(img, dilateElement)
-    # img = cv2.dilate(img, dilateElement)
+
+    return img
 
 def track_filtered_object(color, img_mask, img_original):
     imgTemp = img_mask.copy()
@@ -226,7 +224,9 @@ def drawCrosshairs(x, y, color, img):
 
 
 def get_center_of_nearest_container(img_mask, img_original, color):
-    contours, hierarchy = cv2.findContours(img_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    imgTemp = img_mask.copy()
+
+    contours, hierarchy = cv2.findContours(imgTemp, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
     contours_poly = [None] * len(contours)
     bound_rect = [None] * len(contours)
@@ -249,6 +249,40 @@ def get_center_of_nearest_container(img_mask, img_original, color):
                 my_point = (bound_rect[i][0] + bound_rect[i][2] // 2, bound_rect[i][1] + bound_rect[i][3] // 2)
 
     return my_point
+
+
+def select_color_of_containers():
+    while True:
+        print("BACKEND: Qual a cor do container que você deseja?")
+        print("Opções:")
+        print("0 - RED")
+        print("1 - GREEN")
+        print("2 - BLUE")
+        print("3 - YELLOW")
+
+        color_container = input("Digite o número correspondente à cor: ").strip()
+        
+        if color_container.isdigit():
+            color_container = int(color_container)
+            if color_container in range(4):
+                return color_container
+            else:
+                print("Opção inválida. Por favor, escolha um número entre 0 e 3.")
+        else:
+            print("Entrada inválida. Por favor, insira um número.")
+
+def select_number_of_containers():
+    while True:
+        number_containers = input("BACKEND: Quantos containers você deseja?\n").strip()
+        
+        if number_containers.isdigit():
+            number_containers = int(number_containers)
+            if number_containers > 0:
+                return number_containers
+            else:
+                print("Número inválido. Por favor, insira um número maior que 0.")
+        else:
+            print("Entrada inválida. Por favor, insira um número.")
 
 #==================== END OBJECT IDENTIFIER AND TRACKING VARIABLES AND FUNCTIONS ====================
 
@@ -282,18 +316,25 @@ def main():
 
     # some boolean variables for different functionality within this program
     track_objects = True
-    use_morph_ops = False
+    use_morph_ops = True
     
+    # Read from webcam
     capture = cv2.VideoCapture(0)
+
     # Abrindo logo as telas para nao termos delay depois
     ret, img_original = capture.read()
     img_HSV = cv2.cvtColor(img_original, cv2.COLOR_BGR2HSV)
-    lower = np.array([H_MIN_BLUE, S_MIN_BLUE, V_MIN_BLUE])
-    upper = np.array([H_MAX_BLUE, S_MAX_BLUE, V_MAX_BLUE])
-    img_mask = cv2.inRange(img_HSV, lower, upper)
+    img_mask = np.zeros((4, FRAME_HEIGHT, FRAME_WIDTH), dtype=np.uint8)
+    for i, thresholds in enumerate(my_colors_thresholds):
+        lower = np.array(thresholds[:3])
+        upper = np.array(thresholds[3:])
+        img_mask[i] = cv2.inRange(img_HSV, lower, upper)
+        if use_morph_ops:
+            img_mask[i] = clean_noise_morph_ops(img_mask[i])
+        cv2.imshow(COLORS_NAME[i], img_mask[i])
+        
     cv2.imshow("Image Original", img_original)
     cv2.imshow("Image HSV", img_HSV)
-    cv2.imshow("Image Threshold", img_mask)
 
     create_trackbars()
     #=================== END OBJECT POSITION VARIABLES SETUP =================
@@ -303,14 +344,16 @@ def main():
     # FIRST WHILE LOOP - IT'S REPRESENT EVERY TIME AS THE COMAND TO SEARCH A CONTAINER IS SEND
     while( not first_loop_flag ):
   
-        number_containers = int(input("BACKEND: Quantos containers vc deseja?\n"))
+        number_containers = select_number_of_containers()
+        COLOR = select_color_of_containers()
+        
         for i in range(number_containers):
-            print(f"BACKEND: Buscando container {i+1}")
+            print(f"BACKEND: Buscando container {i+1} da cor {COLORS_NAME[COLOR]}")
 
             #==================== ESP SERIAL COMUNICATION SENDING BEGIN COMAND ====================
             # SERIAL COMUNICATION - READ
             string = read_ser(port, MAX_BUFF_LEN)
-            print(string) #printando após remover o caractere de \n a mais
+            print(string)
 
             time.sleep(2)
 
@@ -322,50 +365,58 @@ def main():
 
             # SERIAL COMUNICATION - READ
             string = read_ser(port, MAX_BUFF_LEN)
-            print(string) #printando após remover o caractere de \n a mais
+            print(string)
             #==================== END ESP SERIAL COMUNICATION SENDING BEGIN COMAND ====================
 
+            # Reset the track control variable
             track_objects = True
 
             # SECOND WHILE LOOP - IT'S REPRESENT THE SEARCH FOR THE SELECTED CONTAINER
             while True:
+                # capture the actual frame from the webcam
                 ret, img_original = capture.read()
                 if not ret:
                     break
-
+                
+                # convert the BGR spacecolor to HSV to be easy to apply filters
                 img_HSV = cv2.cvtColor(img_original, cv2.COLOR_BGR2HSV)
 
-                # for i, thresholds in enumerate(my_colors_thresholds):
-                #     lower = np.array(thresholds[:3])
-                #     upper = np.array(thresholds[3:])
-                #     img_mask = cv2.inRange(img_HSV, lower, upper)
-                #     clean_noise_morph_ops(img_mask)
-                #     cv2.imshow(COLORS_NAME[i], img_mask)
+                # CREATE A MASK FOR EVERY TRACKED COLOR
+                for i, thresholds in enumerate(my_colors_thresholds):
+                    lower = np.array(thresholds[:3])
+                    upper = np.array(thresholds[3:])
+                    img_mask[i] = cv2.inRange(img_HSV, lower, upper)
+                    if use_morph_ops:
+                        img_mask[i] = clean_noise_morph_ops(img_mask[i])
+                    cv2.imshow(COLORS_NAME[i], img_mask[i])
 
-                #     if track_objects and i == COLOR:
-                #         my_container_point = get_center_of_nearest_container(img_mask, img_original, COLOR)
-                #         if my_container_point != (0, 0):
-                #             drawCrosshairs(my_container_point[0], my_container_point[1], COLOR, img_original)
+                    # if track_objects and i == COLOR:
+                    #     my_container_point = get_center_of_nearest_container(img_mask[COLOR], img_original, COLOR)
+                    #     if my_container_point != (0, 0):
+                    #         drawCrosshairs(my_container_point[0], my_container_point[1], COLOR, img_original)
 
-                # Definição dos valores mínimos e máximos para a máscara HSV
+                # #Definição dos valores mínimos e máximos para a máscara HSV
                 # lower = np.array([H_MIN, S_MIN, V_MIN])
                 # upper = np.array([H_MAX, S_MAX, V_MAX])
 
-                lower = np.array([H_MIN_BLUE, S_MIN_BLUE, V_MIN_BLUE])
-                upper = np.array([H_MAX_BLUE, S_MAX_BLUE, V_MAX_BLUE])
+                # lower = np.array([H_MIN_BLUE, S_MIN_BLUE, V_MIN_BLUE])
+                # upper = np.array([H_MAX_BLUE, S_MAX_BLUE, V_MAX_BLUE])
 
-                # Filtragem da imagem HSV entre os valores e armazenamento na matriz 'img_mask'
-                img_mask = cv2.inRange(img_HSV, lower, upper)
+                # # Filtragem da imagem HSV entre os valores e armazenamento na matriz 'img_mask'
+                # img_mask = cv2.inRange(img_HSV, lower, upper)
 
-                # Operações morfológicas na imagem thresholded para eliminar ruído
-                # e enfatizar o(s) objeto(s) filtrado(s)
-                if use_morph_ops:
-                    img_mask = clean_noise_morph_ops(img_mask)
+                # # Operações morfológicas na imagem thresholded para eliminar ruído
+                # # e enfatizar o(s) objeto(s) filtrado(s)
+                # if use_morph_ops:
+                #     img_mask = clean_noise_morph_ops(img_mask)
 
                 # Passagem do frame thresholded para nossa função de rastreamento de objetos
                 # esta função retornará as coordenadas x e y do objeto filtrado
                 if track_objects:
-                    (x,y) = track_filtered_object(GREEN, img_mask, img_original)
+                    # (x,y) = track_filtered_object(GREEN, img_mask, img_original)
+                    (x,y) = get_center_of_nearest_container(img_mask[COLOR], img_original, COLOR)
+                    if x != 0 and y != 0 :
+                        drawCrosshairs(x, y, COLOR, img_original)
                     delta_x = int (X_CENTER - x)
                     delta_y = int (Y_CENTER - y)
 
@@ -399,7 +450,7 @@ def main():
                 # Exibição das imagens
                 cv2.imshow("Image Original", img_original)
                 cv2.imshow("Image HSV", img_HSV)
-                cv2.imshow("Image Threshold", img_mask)
+                # cv2.imshow("Image Threshold", img_mask)
 
                 key = cv2.waitKey(1)
                 if key == 27:  # Press ESC to exit
