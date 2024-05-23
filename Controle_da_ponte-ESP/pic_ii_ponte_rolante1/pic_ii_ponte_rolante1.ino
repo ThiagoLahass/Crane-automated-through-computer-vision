@@ -57,7 +57,6 @@ void move_to_central_position();
 void pegar_carga_e_icar();
 void abaixar_carga_e_soltar();
 
-
 // INTERRUPT FUNCTIONS
 void lim_min_x_interruption();
 void lim_max_x_interruption();
@@ -88,7 +87,7 @@ void setup(){
   pinMode(LIM_Y_MAX,INPUT);
 
   // Configuração das interrupções
-  // attachInterrupt(LIM_X_MIN, lim_min_x_interruption, RISING);
+  attachInterrupt(LIM_X_MIN, lim_min_x_interruption, RISING);
   // attachInterrupt(LIM_X_MAX, lim_max_x_interruption, RISING);
   // attachInterrupt(LIM_Y_MIN, lim_min_y_interruption, RISING);
   // attachInterrupt(LIM_Y_MAX, lim_max_x_interruption, RISING);
@@ -111,30 +110,29 @@ void loop(){
   
   String str = "";
   
-  Serial.println("Aguardando comando pela Serial para iniciar a busca... (begin)");
+  Serial.println("ESP: Aguardando comando pela Serial para iniciar a busca... (begin)");
   
   while(!start_comand){
-   	if (Serial.available() > 0) { 	// Lê os dados se houver dados disponíveis na serial
+   	if (Serial.available() > 0) { 	// Verifica se há dados disponíveis na serial
       str = Serial.readString();    // Lê os dados recebidos como string
       str.trim();                   // Remove espaços em branco do início e do fim da string
       comand_identified = 1;
     }
       
     if(comand_identified){
+      Serial.print("ESP: ");
       Serial.println(str);
 
       // Verifica se a string recebida é igual a "begin"
       if (str.equals("begin")) {
-        // Ação a ser realizada quando a string recebida for igual a "begin"
-        Serial.println("Comando de inicio recebido!");
+        Serial.println("ESP: Comando de inicio recebido!");
         start_comand = 1;
       } else {
-        // Ação a ser realizada quando a string recebida não for igual a "begin"
-        Serial.println("Comando invalido!");
+        Serial.println("ESP: Comando invalido!");
         str = "";
       }
 
-      // Reset reading index 
+      // Reset string 
       str = "";
     }
 
@@ -145,27 +143,30 @@ void loop(){
   ///////////////////////////////////////////////////////////////////////////////////
   
   // ESTADO DE BUSCA DO CONTAINER SELECIONADO
-  // AS INFORMAÇÕES RECEBIDAS AQUI DEVEM SER NO FORMATO
-  // "sxxx zyyy", ONDE:
-  // s é o sinal de delta_x (+ ou -)
-  // xxx são os 3 caracteres de delta_x
-  // z é o sinal de delta_y (+ ou -)
-  // yyy são os 3 caracteres de delta_y
+  /* 
+  AS INFORMAÇÕES RECEBIDAS AQUI DEVEM SER NO FORMATO:
+    "sxxx zyyy",
+    ONDE:
+    s é o sinal de delta_x (+ ou -);
+    xxx são os 3 caracteres de delta_x;
+    z é o sinal de delta_y (+ ou -);
+    yyy são os 3 caracteres de delta_y.
+  */
   int container_centralized = 0;
   str = "";
   
-  Serial.println("Aguardando posicao do container...");
+  Serial.println("ESP: Aguardando posicao do container...");
   
   unsigned long tempo_inicio_x = millis(); 	// Salva o tempo de início de centralização em x
   unsigned long tempo_inicio_y = millis(); 	// Salva o tempo de início de centralização em y
-  unsigned long tempo_decorrido_x = 0; 		  // Variável para armazenar o tempo decorrido de centralização em x
-  unsigned long tempo_decorrido_y = 0; 		  // Variável para armazenar o tempo decorrido de centralização em y
+  unsigned long tempo_decorrido_x = 0; 		  // Variável para armazenar o tempo gasto para realizar a centralização em x
+  unsigned long tempo_decorrido_y = 0; 		  // Variável para armazenar o tempo gasto para realizar a centralização em y
   
   while(!container_centralized){
-    // SETAR VELOCIDADE DOS MOTORES DE TRANSLAÇÃO DE ACORDO COM O POTENCIOMETRO
+    // SETAR VELOCIDADE DOS MOTORES DE TRANSLAÇÃO DE ACORDO COM O POTENCIOMETRO DE VELOCIDADE
     speed();
 
-    if (Serial.available() > 0) { 	// Lê os dados se houver dados disponíveis na serial
+    if (Serial.available() > 0) { 	// Verifica se há dados disponíveis na serial
       str = Serial.readString();    // Lê os dados recebidos como string
       str.trim();                   // Remove espaços em branco do início e do fim da string
       comand_identified = 1;
@@ -173,25 +174,29 @@ void loop(){
       
     if(comand_identified){
       // VERIFICAR COMANDO
-      Serial.println(str);
+      // Serial.print("ESP: ");
+      // Serial.print(str);
       
-      // AS INFORMAÇÕES RECEBIDAS AQUI DEVEM SER NO FORMATO
-      // "sxxx zyyy", ONDE:
-      // s é o sinal de delta_x (+ ou -)
-      // xxx são os 3 caracteres de delta_x
-      // z é o sinal de delta_y (+ ou -)
-      // yyy são os 3 caracteres de delta_y
+      /* 
+      AS INFORMAÇÕES RECEBIDAS AQUI DEVEM SER NO FORMATO:
+        "sxxx zyyy",
+        ONDE:
+        s é o sinal de delta_x (+ ou -);
+        xxx são os 3 caracteres de delta_x;
+        z é o sinal de delta_y (+ ou -);
+        yyy são os 3 caracteres de delta_y.
+      */
       String str_delta_x = str.substring(0, 4); // Extrai os primeiros 4 caracteres (delta_x)
-      String str_delta_y = str.substring(5, 9); // Extrai os próximos  4 caracteres (delta_y)
+      String str_delta_y = str.substring(5, 9); // Extrai os ultimos   4 caracteres (delta_y)
 
       // Converte as strings para números inteiros
       delta_x = str_delta_x.toInt();
       delta_y = str_delta_y.toInt();
       
-      Serial.print("delta_x: ");
-      Serial.println(delta_x);
-      Serial.print("delta_y: ");
-      Serial.println(delta_y);
+      // Serial.print("ESP: delta_x: ");
+      // Serial.print(delta_x);
+      // Serial.print("ESP: delta_y: ");
+      // Serial.print(delta_y);
       
       if(delta_x > RANGE_ERRO_PERMITIDO_POSICAO_CONTAINER){             // CÂMERA ESTÁ À ESQUERDA DO CENTRO DO CONTAINER
 
@@ -202,7 +207,7 @@ void loop(){
           move_1_forward_2_backward();
         }
         else{                                                           // CÂMERA ESTÁ CENTRALIZADA NO CONTAINER NO SENTIDO VERTICAL
-          Serial.println("Centralizado em y");
+          // Serial.print("ESP: Centralizado em y");
           if(tempo_decorrido_y == 0){
             tempo_decorrido_y = millis() - tempo_inicio_y;
           }
@@ -218,7 +223,7 @@ void loop(){
           move_1_backward_2_backward();
         }
         else{                                                           // CÂMERA ESTÁ CENTRALIZADA NO CONTAINER NO SENTIDO VERTICAL
-          Serial.println("Centralizado em y");
+          // Serial.print("ESP: Centralizado em y");
           if(tempo_decorrido_y == 0){
             tempo_decorrido_y = millis() - tempo_inicio_y;
           }
@@ -226,7 +231,7 @@ void loop(){
         }
       }
       else{                                                             // CÂMERA ESTÁ CENTRALIZADA NO CONTAINER NO SENTIDO HORIZONTAL
-        Serial.println("Centralizado em x");
+        // Serial.print("ESP: Centralizado em x");
         if(tempo_decorrido_x == 0){
           tempo_decorrido_x = millis() - tempo_inicio_x;
         }
@@ -244,16 +249,16 @@ void loop(){
           
           move_1_stop_2_stop();
           
-          Serial.println("Carro centralizado em cima do container alvo");
+          Serial.print("ESP: container centralizado");
           container_centralized = 1;
         }
       }
       
       if(!container_centralized){
-        Serial.println("Ainda nao chegou no centro do container...");
+        // Serial.print("ESP: Ainda nao chegou no centro do container...");
       }
        
-      // Reset the variables 
+      // Reseta as variáveis 
       str = "";
       comand_identified = 0; 
     }
@@ -264,19 +269,22 @@ void loop(){
   ///////////////////////////////////////////////////////////////////////////////////
   
   // ESTADO DE IÇAMENTO DA CARGA
-  Serial.println("Icando carga...");
+  // DELAY PARA DAR TEMPO DO BACKEND RECEBER O COMANDO INDICANDO QUE O CONTAINER ESTA CENTRALIZADO
+  delay(2000);
+
+  Serial.println("ESP: Icando carga...");
   pegar_carga_e_icar();
-  Serial.println("Carga icada");
+  Serial.println("ESP: Carga icada");
   
   ///////////////////////////////////////////////////////////////////////////////////
   
   // ESTADO DE CARREGAMENTO DO CONTAINER PARA O CARRINHO AUTÔNOMO
-  Serial.print("Tempo decorrido x: ");
+  Serial.print("ESP: Tempo decorrido x: ");
   Serial.println(tempo_decorrido_x);
-  Serial.print("Tempo decorrido y: ");
+  Serial.print("ESP: Tempo decorrido y: ");
   Serial.println(tempo_decorrido_y);
   
-  Serial.println("Levando container para o carrinho...");
+  Serial.println("ESP: Levando container para o carrinho...");
   
   if(tempo_decorrido_x <= tempo_decorrido_y + TEMPO_CENTRO_PONTE_ATE_CARRINHO){
     move_1_backward_2_backward();
@@ -293,43 +301,29 @@ void loop(){
   	delay(tempo_decorrido_x - (tempo_decorrido_y + TEMPO_CENTRO_PONTE_ATE_CARRINHO));
   }
   
-  Serial.println("Container centralizado em cima do carrinho");
+  Serial.println("ESP: Container centralizado em cima do carrinho");
   move_1_stop_2_stop();
   
   ///////////////////////////////////////////////////////////////////////////////////
   
   // ESTADO DE COLOCAR O CONTAINER NO CARRINHO AUTÔNOMO
-  Serial.println("Colocando container em cima do carrinho...");
+  Serial.println("ESP: Colocando container em cima do carrinho...");
   abaixar_carga_e_soltar();
   
   ///////////////////////////////////////////////////////////////////////////////////
   
   // ESTADO DE VOLTAR A PONTE PARA A POSIÇÃO CENTRAL
-  Serial.println("Movendo carro de volta para a posição central");
+  Serial.println("ESP: Movendo carro de volta para a posicao central");
 
   move_1_stop_2_forward();
   delay(TEMPO_CENTRO_PONTE_ATE_CARRINHO);
   move_1_stop_2_stop();
+  Serial.print("ESP: end");
+
+  // DELAY PARA DAR TEMPO DO BACKEND RECEBER O COMANDO INDICANDO QUE O CICLO ESTA COMPLETO
+  delay(2000);
   
   ///////////////////////////////////////////////////////////////////////////////////
-  
-  // // VERIFICAR OS SENSORES DE FIM DE CURSO
-  // lim_x_min = digitalRead(LIM_X_MIN);
-  // lim_x_max = digitalRead(LIM_X_MAX);
-  // lim_y_min = digitalRead(LIM_Y_MIN);
-  // lim_y_max = digitalRead(LIM_Y_MAX);
-  
-  // Serial.print("lim_x_min: ");
-  // Serial.println(lim_x_min);
-  // Serial.print("lim_x_max: ");
-  // Serial.println(lim_x_max);
-  // Serial.print("lim_y_min: ");
-  // Serial.println(lim_y_min);
-  // Serial.print("lim_y_max: ");
-  // Serial.println(lim_y_max);
-  // Serial.println();
-  
-  delay(100);
 }
 
 void speed(){
@@ -380,7 +374,7 @@ void move_to_initial_position(){
   bool initial_position_x_reached = false;
   bool initial_position_y_reached = false;
   
-  Serial.println("Movendo o carro para a posicao inicial...");
+  Serial.println("ESP: Movendo o carro para a posicao inicial...");
   speed();
   move_1_backward_2_backward();
   
@@ -397,7 +391,7 @@ void move_to_initial_position(){
     // E SAÍMOS DESSE LOOP INICIAL
     if(lim_x_min == HIGH && lim_y_min == HIGH){
       move_1_stop_2_stop();
-      Serial.println("Posicao inicial atingida");
+      Serial.println("ESP: Posicao inicial atingida");
       break;
     }
     // SE APENAS O SENSOR LIMITE MININO X ESTIVER ATIVADO
@@ -405,14 +399,14 @@ void move_to_initial_position(){
     if(!initial_position_x_reached && lim_x_min == HIGH){
       initial_position_x_reached = true;
       move_1_stop_2_backward();
-      Serial.println("Posicao x inicial atingida");
+      Serial.println("ESP: Posicao x inicial atingida");
     }
     // SE AEPNAS O SENSOR LIMITE MININO Y ESTIVER ATIVADO
     // APENAS O MOTOR DE TRANSLAÇÃO X DEVE SER DESATIVADO
     if(!initial_position_y_reached && lim_y_min == HIGH){
       initial_position_y_reached = true;
       move_1_backward_2_stop();
-      Serial.println("Posicao y inicial atingida");
+      Serial.println("ESP: Posicao y inicial atingida");
     }
   }
 }
@@ -421,7 +415,7 @@ void move_to_initial_position(){
 void move_to_central_position(){
   move_to_initial_position();
   
-  Serial.println("Movendo o carro para a posicao central...");
+  Serial.println("ESP: Movendo o carro para a posicao central...");
 
   speed();
 
@@ -431,7 +425,7 @@ void move_to_central_position(){
   delay(1000);
   move_1_stop_2_stop();
   
-  Serial.println("Posicao central atingida!");
+  Serial.println("ESP: Posicao central atingida!");
 }
 
 void pegar_carga_e_icar(){
@@ -458,7 +452,8 @@ void abaixar_carga_e_soltar(){
 
 void lim_min_x_interruption(){
   move_1_stop_2_stop();  
-  move_to_central_position();
+  //move_to_central_position();
+  Serial.println("ESP: Interrupção ativada, parando os motores...");
 }
 void lim_max_x_interruption(){
   move_1_stop_2_stop();

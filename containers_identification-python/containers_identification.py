@@ -49,12 +49,12 @@ V_MIN_GREEN = 98
 V_MAX_GREEN = 173
 
 # initial min and max HSV filter to BLUE
-H_MIN_BLUE = 79
-H_MAX_BLUE = 129
-S_MIN_BLUE = 67
-S_MAX_BLUE = 217
-V_MIN_BLUE = 98
-V_MAX_BLUE = 250
+H_MIN_BLUE = 94
+H_MAX_BLUE = 122
+S_MIN_BLUE = 68
+S_MAX_BLUE = 176
+V_MIN_BLUE = 132
+V_MAX_BLUE = 213
 
 # initial min and max HSV filter to YELLOW
 H_MIN_YELLOW = 0
@@ -254,7 +254,7 @@ def get_center_of_nearest_container(img_mask, img_original, color):
 
 def main():
     #==================== ESP SERIAL COMUNICATION SETUP ====================
-    MAX_BUFF_LEN = 255
+    MAX_BUFF_LEN = 1024
     SETUP 		 = False
     port 		 = None
     prev = time.time()
@@ -272,113 +272,126 @@ def main():
             SETUP = True
     #=================== END ESP SERIAL COMUNICATION SETUP ==================
 
-    #==================== ESP SERIAL COMUNICATION SENDING BEGIN COMAND ====================
-
-    # SERIAL COMUNICATION - READ
-    string = read_ser(port, MAX_BUFF_LEN)
-    print(string) #printando após remover o caractere de \n a mais
-
-    time.sleep(2)
-
-    # SERIAL COMUNICATION - WRITE
-    cmd = 'begin'
-    write_ser(port, cmd)
-
-    time.sleep(0.1)
-
-    # SERIAL COMUNICATION - READ
-    string = read_ser(port, MAX_BUFF_LEN)
-    print(string) #printando após remover o caractere de \n a mais
-    #==================== END ESP SERIAL COMUNICATION SENDING BEGIN COMAND ====================
-
-    #==================== OBJECT POSITION VARIABLES ====================
+    #==================== OBJECT POSITION/CAMERA VARIABLES SETUP ====================
     X_CENTER = FRAME_WIDTH / 2
     Y_CENTER = FRAME_HEIGHT / 2
     x = 0
     y = 0
     delta_x = 0
     delta_y = 0
-    #=================== END OBJECT POSITION VARIABLES =================
 
     # some boolean variables for different functionality within this program
     track_objects = True
     use_morph_ops = False
-
-    # ====== PARA TESTES COM IMAGEM ======:
-    # imagem de "conteiners" para testes
-    # path = "Projeto-Ponte_rolante_automatizada\containers_identification-python\Resources\containers1.jpg"
     
     capture = cv2.VideoCapture(0)
     create_trackbars()
+    #=================== END OBJECT POSITION VARIABLES SETUP =================
 
+    first_loop_flag = False
+
+    # FIRST WHILE LOOP - IT'S REPRESENT EVERY TIME AS THE COMAND TO SEARCH A CONTAINER IS SEND
     while True:
-        # ====== PARA TESTES COM IMAGEM ======:
-        # img_original = cv2.imread(path)
-        # img_original = cv2.resize(img_original, (FRAME_WIDTH, FRAME_HEIGHT) )
-
-        ret, img_original = capture.read()
-        if not ret:
+        if first_loop_flag:
             break
+    
+        #==================== ESP SERIAL COMUNICATION SENDING BEGIN COMAND ====================
+        # SERIAL COMUNICATION - READ
+        string = read_ser(port, MAX_BUFF_LEN)
+        print(string) #printando após remover o caractere de \n a mais
 
-        img_HSV = cv2.cvtColor(img_original, cv2.COLOR_BGR2HSV)
+        time.sleep(2)
 
-        # for i, thresholds in enumerate(my_colors_thresholds):
-        #     lower = np.array(thresholds[:3])
-        #     upper = np.array(thresholds[3:])
-        #     img_mask = cv2.inRange(img_HSV, lower, upper)
-        #     clean_noise_morph_ops(img_mask)
-        #     cv2.imshow(COLORS_NAME[i], img_mask)
+        # SERIAL COMUNICATION - WRITE
+        cmd = 'begin'
+        write_ser(port, cmd)
 
-        #     if track_objects and i == COLOR:
-        #         my_container_point = get_center_of_nearest_container(img_mask, img_original, COLOR)
-        #         if my_container_point != (0, 0):
-        #             drawCrosshairs(my_container_point[0], my_container_point[1], COLOR, img_original)
+        time.sleep(0.1)
 
-        # Definição dos valores mínimos e máximos para a máscara HSV
-        # lower = np.array([H_MIN, S_MIN, V_MIN])
-        # upper = np.array([H_MAX, S_MAX, V_MAX])
+        # SERIAL COMUNICATION - READ
+        string = read_ser(port, MAX_BUFF_LEN)
+        print(string) #printando após remover o caractere de \n a mais
+        #==================== END ESP SERIAL COMUNICATION SENDING BEGIN COMAND ====================
 
-        lower = np.array([H_MIN_BLUE, S_MIN_BLUE, V_MIN_BLUE])
-        upper = np.array([H_MAX_BLUE, S_MAX_BLUE, V_MAX_BLUE])
+        track_objects = True
+        # SECOND WHILE LOOP - IT'S REPRESENT THE SEARCH FOR THE SELECTED CONTAINER
+        while True:
+            ret, img_original = capture.read()
+            if not ret:
+                break
 
-        # Filtragem da imagem HSV entre os valores e armazenamento na matriz 'img_mask'
-        img_mask = cv2.inRange(img_HSV, lower, upper)
+            img_HSV = cv2.cvtColor(img_original, cv2.COLOR_BGR2HSV)
 
-        # Operações morfológicas na imagem thresholded para eliminar ruído
-        # e enfatizar o(s) objeto(s) filtrado(s)
-        if use_morph_ops:
-            img_mask = clean_noise_morph_ops(img_mask)
+            # for i, thresholds in enumerate(my_colors_thresholds):
+            #     lower = np.array(thresholds[:3])
+            #     upper = np.array(thresholds[3:])
+            #     img_mask = cv2.inRange(img_HSV, lower, upper)
+            #     clean_noise_morph_ops(img_mask)
+            #     cv2.imshow(COLORS_NAME[i], img_mask)
 
-        # Passagem do frame thresholded para nossa função de rastreamento de objetos
-        # esta função retornará as coordenadas x e y do objeto filtrado
-        if track_objects:
-            (x,y) = track_filtered_object(GREEN, img_mask, img_original)
-            delta_x = int (X_CENTER - x)
-            delta_y = int (Y_CENTER - y)
+            #     if track_objects and i == COLOR:
+            #         my_container_point = get_center_of_nearest_container(img_mask, img_original, COLOR)
+            #         if my_container_point != (0, 0):
+            #             drawCrosshairs(my_container_point[0], my_container_point[1], COLOR, img_original)
 
-            # Preenchimento com zeros à esquerda para garantir 3 dígitos
-            delta_x_str = str(delta_x).zfill(4)
-            delta_y_str = str(delta_y).zfill(4)
+            # Definição dos valores mínimos e máximos para a máscara HSV
+            # lower = np.array([H_MIN, S_MIN, V_MIN])
+            # upper = np.array([H_MAX, S_MAX, V_MAX])
 
-            # SERIAL COMUNICATION - WRITE
-            cmd = f'{delta_x_str} {delta_y_str}'
-            write_ser(port, cmd)
+            lower = np.array([H_MIN_BLUE, S_MIN_BLUE, V_MIN_BLUE])
+            upper = np.array([H_MAX_BLUE, S_MAX_BLUE, V_MAX_BLUE])
 
-            time.sleep(0.1)
+            # Filtragem da imagem HSV entre os valores e armazenamento na matriz 'img_mask'
+            img_mask = cv2.inRange(img_HSV, lower, upper)
 
-            # SERIAL COMUNICATION - READ
-            string = read_ser(port, MAX_BUFF_LEN)
-            if(len(string)):
-                print(string[0:-1]) #printando após remover o caractere de \n a mais
+            # Operações morfológicas na imagem thresholded para eliminar ruído
+            # e enfatizar o(s) objeto(s) filtrado(s)
+            if use_morph_ops:
+                img_mask = clean_noise_morph_ops(img_mask)
 
-        # Exibição das imagens
-        cv2.imshow("Image Original", img_original)
-        cv2.imshow("Image HSV", img_HSV)
-        cv2.imshow("Image Threshold", img_mask)
+            # Passagem do frame thresholded para nossa função de rastreamento de objetos
+            # esta função retornará as coordenadas x e y do objeto filtrado
+            if track_objects:
+                (x,y) = track_filtered_object(GREEN, img_mask, img_original)
+                delta_x = int (X_CENTER - x)
+                delta_y = int (Y_CENTER - y)
 
-        key = cv2.waitKey(1)
-        if key == 27:  # Press ESC to exit
-            break
+                # Preenchimento com zeros à esquerda para garantir 3 dígitos
+                delta_x_str = str(delta_x).zfill(4)
+                delta_y_str = str(delta_y).zfill(4)
+
+                # SERIAL COMUNICATION - WRITE
+                cmd = f'{delta_x_str} {delta_y_str}'
+                write_ser(port, cmd)
+
+                time.sleep(0.2)
+
+                # SERIAL COMUNICATION - READ
+                string = read_ser(port, MAX_BUFF_LEN)
+                if(len(string)):
+                    print(f"{string}")
+                    if (string == "ESP: container centralizado"):
+                        print("BACKEND: Parando de rastrear container...")
+                        track_objects = False
+
+            else:
+                string = read_ser(port, MAX_BUFF_LEN)
+                if(len(string)):
+                    print(f"{string}")
+                    if(string == "ESP: end"):
+                        print("BACKEND: Voltando para o primeiro loop (aguardar comando 'begin')")
+                        break
+                
+
+            # Exibição das imagens
+            cv2.imshow("Image Original", img_original)
+            cv2.imshow("Image HSV", img_HSV)
+            cv2.imshow("Image Threshold", img_mask)
+
+            key = cv2.waitKey(1)
+            if key == 27:  # Press ESC to exit
+                first_loop_flag = True
+                break
 
     # capture.release()
     cv2.destroyAllWindows()
