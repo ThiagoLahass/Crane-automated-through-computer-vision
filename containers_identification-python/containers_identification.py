@@ -112,7 +112,7 @@ FRAME_HEIGHT    = 480
 MAX_NUM_OBJECTS = 5
 
 # minimum and maximum object area
-MIN_OBJECT_AREA = 50 * 50                                   # ADJUST WHEN DOING CONTAINER DETECTION ON CRANE
+MIN_OBJECT_AREA = 20 * 20                                   # ADJUST WHEN DOING CONTAINER DETECTION ON CRANE
 MAX_OBJECT_AREA = int(FRAME_HEIGHT * FRAME_WIDTH / 1.5)
 
 trackbar_window_name = "Trackbars"
