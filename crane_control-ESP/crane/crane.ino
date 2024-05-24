@@ -40,26 +40,106 @@ int lim_y_min = 0;
 int lim_y_max = 0;
 
 ////////////////////////////// FUNCTION HEADERS ///////////////////////////////////
+
+/**
+ * @brief Sets the motor speed based on the input from a speed potentiometer.
+ */
 void speed();
+
+/**
+ * @brief Controls the movement of motors in different directions based on the input pins.
+ * 
+ * @param in1_ State for motor IN1 pin.
+ * @param in2_ State for motor IN2 pin.
+ * @param in3_ State for motor IN3 pin.
+ * @param in4_ State for motor IN4 pin.
+ */
 void move(int in1_, int in2_, int in3_, int in4_);
+
+/**
+ * @brief Moves both motors forward.
+ */
 void move_1_forward_2_forward();
+
+/**
+ * @brief Moves motor 1 forward and stops motor 2.
+ */
 void move_1_forward_2_stop();
+
+/**
+ * @brief Moves motor 1 forward and motor 2 backward.
+ */
 void move_1_forward_2_backward();
+
+/**
+ * @brief Stops motor 1 and moves motor 2 forward.
+ */
 void move_1_stop_2_forward();
+
+/**
+ * @brief Stops both motors.
+ */
 void move_1_stop_2_stop();
+
+/**
+ * @brief Stops motor 1 and moves motor 2 backward.
+ */
 void move_1_stop_2_backward();
+
+/**
+ * @brief Moves motor 1 backward and motor 2 forward.
+ */
 void move_1_backward_2_forward();
+
+/**
+ * @brief Stops motor 1 and moves motor 2 backward.
+ */
 void move_1_backward_2_stop();
+
+/**
+ * @brief Moves both motors backward.
+ */
 void move_1_backward_2_backward();
+
+/**
+ * @brief Moves the system to the initial position (0, 0) using the limit switch sensors.
+ */
 void move_to_initial_position();
+
+/**
+ * @brief Moves the system to the central position after reaching the initial position.
+ */
 void move_to_central_position();
+
+/**
+ * @brief Lifts the load using a servo motor and an electromagnet.
+ */
 void lift_load();
+
+/**
+ * @brief Lowers the load by releasing it from the electromagnet.
+ */
 void lower_load();
 
 // INTERRUPT FUNCTIONS
+/**
+ * @brief Interrupt function for X minimum limit switch.
+ */
 void lim_min_x_interrupt();
+
+/**
+ * @brief Interrupt function for X maximum limit switch.
+ */
 void lim_max_x_interrupt();
+
+/**
+ * @brief Interrupt function for Y minimum limit switch.
+ */
 void lim_min_y_interrupt();
+
+/**
+ * @brief Interrupt function for Y maximum limit switch.
+ */
 void lim_max_y_interrupt();
 //////////////////////////////////////////////////////////////////////////////////////
 
@@ -388,10 +468,6 @@ void move_to_initial_position(){
   while(1){
     speed();
     
-    // CHECK THE LIMIT SWITCH SENSORS
-    lim_x_min = digitalRead(LIM_X_MIN_PIN);
-    lim_y_min = digitalRead(LIM_Y_MIN_PIN);
-    
     // IF BOTH SENSORS ARE ACTIVATED, WE ARE IN THE
     // INITIAL POSITION x = 0 and y = 0
     // BOTH MOTORS MUST BE DEACTIVATED
@@ -399,6 +475,10 @@ void move_to_initial_position(){
     if(lim_x_min == HIGH && lim_y_min == HIGH){
       move_1_stop_2_stop();
       Serial.println("ESP: Initial position reached");
+      lim_x_min = 0;
+      lim_x_max = 0;
+      lim_y_min = 0;
+      lim_y_max = 0;
       break;
     }
     // IF ONLY THE X MINIMUM LIMIT SENSOR IS ACTIVATED
@@ -461,23 +541,31 @@ void lower_load(){
 void lim_min_x_interrupt(){
   // Stop all movement if X min limit is reached
   move_1_stop_2_stop();
+  Serial.println("ESP: LIM MIN X reached");
+  move_to_initial_position();
   lim_x_min = 1;
 }
 
 void lim_max_x_interrupt(){
   // Stop all movement if X max limit is reached
   move_1_stop_2_stop();
+  Serial.println("ESP: LIM MAX X reached");
+  move_to_initial_position();
   lim_x_max = 1;
 }
 
 void lim_min_y_interrupt(){
   // Stop all movement if Y min limit is reached
   move_1_stop_2_stop();
+  Serial.println("ESP: LIM MIX Y reached");
+  move_to_initial_position();
   lim_y_min = 1;
 }
 
 void lim_max_y_interrupt(){
   // Stop all movement if Y max limit is reached
   move_1_stop_2_stop();
+  Serial.println("ESP: LIM MAX Y reached");
+  move_to_initial_position();
   lim_y_max = 1;
 }
