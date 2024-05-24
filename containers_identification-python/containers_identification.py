@@ -307,17 +307,17 @@ def select_colors_and_quantities():
     quantities = []
 
     while True:
-        print("BACKEND: Quantos tipos diferentes de containers você deseja procurar?")
-        num_types = input("Digite o número de tipos: ").strip()
+        print("BACKEND: How many different types of containers do you want to search for?")
+        num_types = input("Enter the number of types: ").strip()
 
         if num_types.isdigit() and int(num_types) > 0:
             num_types = int(num_types)
             break
         else:
-            print("Entrada inválida. Por favor, insira um número inteiro maior que 0.")
+            print("Invalid Input. Please enter an integer greater than 0.")
 
     for i in range(num_types):
-        print(f"Tipo de container {i + 1}:")
+        print(f"Type of container {i + 1}:")
         color = select_color()
         quantity = select_quantity()
         colors.append(color)
@@ -333,23 +333,23 @@ def select_color():
         int: Index corresponding to the selected color.
     """
     while True:
-        print("BACKEND: Qual a cor do container que você deseja?")
-        print("Opções:")
+        print("BACKEND: What color container do you want?")
+        print("Options:")
         print("0 - RED")
         print("1 - GREEN")
         print("2 - BLUE")
         print("3 - YELLOW")
 
-        color_container = input("Digite o número correspondente à cor: ").strip()
+        color_container = input("Enter the number corresponding to the color: ").strip()
 
         if color_container.isdigit():
             color_container = int(color_container)
             if color_container in range(4):
                 return color_container
             else:
-                print("Opção inválida. Por favor, escolha um número entre 0 e 3.")
+                print("Invalid option. Please choose a number between 0 and 3.")
         else:
-            print("Entrada inválida. Por favor, insira um número.")
+            print("Invalid Input. Please enter a number.")
 
 def select_quantity():
     """
@@ -359,16 +359,16 @@ def select_quantity():
         int: Quantity of containers.
     """
     while True:
-        quantity = input("BACKEND: Quantos containers deste tipo você deseja?\n").strip()
+        quantity = input("BACKEND: How many containers of this type do you want?\n").strip()
 
         if quantity.isdigit():
             quantity = int(quantity)
             if quantity > 0:
                 return quantity
             else:
-                print("Número inválido. Por favor, insira um número maior que 0.")
+                print("Invalid number. Please enter a number greater than 0.")
         else:
-            print("Entrada inválida. Por favor, insira um número.")
+            print("Invalid Input. Please enter a number.")
 
 #==================== END OBJECT IDENTIFIER AND TRACKING VARIABLES AND FUNCTIONS ====================
 
@@ -435,14 +435,14 @@ def main():
         
         # input of the container(s) information
         colors, quantities = select_colors_and_quantities()
-        print("Cores selecionadas:", colors)
-        print("Quantidades selecionadas:", quantities)
+        print("BACKEND: Selected colors: ", colors)
+        print("BACKEND: Selected quantities: ", quantities)
 
         # for each set of containers of a color
         for index, color in enumerate(colors):
             # for each container
             for i in range(quantities[index]):
-                print(f"BACKEND: Buscando container {i+1}/{quantities[index]} da cor {COLORS_NAME[color]}")
+                print(f"BACKEND: Searching for container {i+1}/{quantities[index]} of {COLORS_NAME[color]} color")
 
                 #==================== ESP SERIAL COMUNICATION SENDING BEGIN COMAND ====================
                 # SERIAL COMUNICATION - READ
@@ -511,8 +511,8 @@ def main():
                             print(f"{string}")
                             # If the difference between the current position of the object in the camera
                             # and the center is within the allowed limit, ESP sends a message to our BACKEND informing this
-                            if (string == "ESP: container centralizado"):
-                                print("BACKEND: Parando de rastrear container...")
+                            if (string == "ESP: container centered"):
+                                print("BACKEND: Centralized container, stopping tracking...")
                                 track_objects = False
 
                     else:
@@ -522,7 +522,7 @@ def main():
                             # When the bridge has completed the search cycle for a container,
                             # the ESP also sends a message to the BACKEND informing this fact
                             if(string == "ESP: end"):
-                                print("BACKEND: Buscando proximo container, caso for o ultimo volta para o primeiro loop ('begin')")
+                                print("BACKEND: Searching for the next container, if it is the last one, return to the first loop ('begin')")
                                 break
                         
 

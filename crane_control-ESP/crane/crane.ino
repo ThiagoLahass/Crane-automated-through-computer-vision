@@ -1,36 +1,35 @@
 #include <ESP32Servo.h>
 
 // SETUP SERVO
-#define VALOR_PARADO_SERVO 				      93
-#define VELOCIDADE_SERVO 						    5
-#define SERVO 									        23
+#define SERVO_STOPPED_VALUE            93
+#define SERVO_SPEED                    5
+#define SERVO_PIN                      23
 Servo servo;
 
-// SETUP ELETR0ÍMÃ
-#define ELETROIMA 	                    22
+// SETUP ELECTROMAGNET
+#define ELECTROMAGNET_PIN              22
 
-// OUTRAS VARIÁVEIS DE SETUP
-#define TEMPO_ABAIXAR_ELETROIMA 				        3000
-#define RANGE_ERRO_PERMITIDO_POSICAO_CONTAINER 	20
-#define TEMPO_CENTRO_PONTE_ATE_CARRINHO 		    5000
+// OTHER SETUP VARIABLES
+#define ELECTROMAGNET_DOWN_TIME        3000
+#define CONTAINER_POSITION_ERROR_RANGE 20
+#define TIME_BRIDGE_CENTER_TO_CART     5000
 
+// SETUP MOTORS
+#define EN_A_PIN     19
+#define IN1_PIN      18
+#define IN2_PIN      15
 
-// SETUP MOTORES
-#define EN_A		19
-#define IN1  		18
-#define IN2			15
+#define EN_B_PIN     17
+#define IN3_PIN      16
+#define IN4_PIN       4
 
-#define EN_B 		17
-#define IN3 		16
-#define IN4 		4
+#define MOTOR_MOV_SPEED_PIN 0
 
-#define VELOCIDADE_MOT_MOV 	0
-
-// SENSORES DE FIM DE CURSO
-#define LIM_X_MIN  	12
-#define LIM_X_MAX   14
-#define LIM_Y_MIN   27
-#define LIM_Y_MAX   26
+// LIMIT SWITCH SENSORS
+#define LIM_X_MIN_PIN  12
+#define LIM_X_MAX_PIN  14
+#define LIM_Y_MIN_PIN  27
+#define LIM_Y_MAX_PIN  26
 
 int delta_x = 0;
 int delta_y = 0;
@@ -40,7 +39,7 @@ int lim_x_max = 0;
 int lim_y_min = 0;
 int lim_y_max = 0;
 
-////////////////////////////// FUNCTIONS HEADERS ///////////////////////////////////
+////////////////////////////// FUNCTION HEADERS ///////////////////////////////////
 void speed();
 void move(int in1_, int in2_, int in3_, int in4_);
 void move_1_forward_2_forward();
@@ -54,47 +53,47 @@ void move_1_backward_2_stop();
 void move_1_backward_2_backward();
 void move_to_initial_position();
 void move_to_central_position();
-void pegar_carga_e_icar();
-void abaixar_carga_e_soltar();
+void lift_load();
+void lower_load();
 
 // INTERRUPT FUNCTIONS
-void lim_min_x_interruption();
-void lim_max_x_interruption();
-void lim_min_y_interruption();
-void lim_max_y_interruption();
+void lim_min_x_interrupt();
+void lim_max_x_interrupt();
+void lim_min_y_interrupt();
+void lim_max_y_interrupt();
 //////////////////////////////////////////////////////////////////////////////////////
 
 void setup(){
   Serial.begin(9600);
-  servo.attach(SERVO);
+  servo.attach(SERVO_PIN);
   
-  pinMode(EN_A, OUTPUT);
-  pinMode(IN1, OUTPUT);
-  pinMode(IN2, OUTPUT);
+  pinMode(EN_A_PIN, OUTPUT);
+  pinMode(IN1_PIN, OUTPUT);
+  pinMode(IN2_PIN, OUTPUT);
   
-  pinMode(EN_B, OUTPUT);
-  pinMode(IN3, OUTPUT);
-  pinMode(IN4, OUTPUT);
+  pinMode(EN_B_PIN, OUTPUT);
+  pinMode(IN3_PIN, OUTPUT);
+  pinMode(IN4_PIN, OUTPUT);
   
-  pinMode(VELOCIDADE_MOT_MOV, INPUT);
+  pinMode(MOTOR_MOV_SPEED_PIN, INPUT);
   
-  pinMode(ELETROIMA, OUTPUT);
+  pinMode(ELECTROMAGNET_PIN, OUTPUT);
   
-  // DEFINIR SENSORES DE FIM DE CURSO COMO PINOS DE INTERRUPÇÃO
-  pinMode(LIM_X_MIN,INPUT);
-  pinMode(LIM_X_MAX,INPUT);
-  pinMode(LIM_Y_MIN,INPUT);
-  pinMode(LIM_Y_MAX,INPUT);
+  // SET LIMIT SWITCH SENSORS AS INTERRUPT PINS
+  pinMode(LIM_X_MIN_PIN, INPUT);
+  pinMode(LIM_X_MAX_PIN, INPUT);
+  pinMode(LIM_Y_MIN_PIN, INPUT);
+  pinMode(LIM_Y_MAX_PIN, INPUT);
 
-  // Configuração das interrupções
-  attachInterrupt(LIM_X_MIN, lim_min_x_interruption, RISING);
-  // attachInterrupt(LIM_X_MAX, lim_max_x_interruption, RISING);
-  // attachInterrupt(LIM_Y_MIN, lim_min_y_interruption, RISING);
-  // attachInterrupt(LIM_Y_MAX, lim_max_x_interruption, RISING);
+  // Interrupt configuration
+  attachInterrupt(LIM_X_MIN_PIN, lim_min_x_interrupt, RISING);
+  // attachInterrupt(LIM_X_MAX_PIN, lim_max_x_interrupt, RISING);
+  // attachInterrupt(LIM_Y_MIN_PIN, lim_min_y_interrupt, RISING);
+  // attachInterrupt(LIM_Y_MAX_PIN, lim_max_x_interrupt, RISING);
   
-  // ESTADO DE SETUP
-  // MOVE O CARRO PARA A POSICAO INICIAL (0, 0)
-  // DEPOIS MOVER PARA O CENTRO DA PONTE PARA SE TER VISAO DOS CONTAINERS
+  // SETUP STATE
+  // MOVE THE CAR TO THE INITIAL POSITION (0, 0)
+  // THEN MOVE TO THE CENTER OF THE BRIDGE TO HAVE A VIEW OF THE CONTAINERS
   // move_to_central_position();
   
   delay(100);
@@ -103,32 +102,32 @@ void setup(){
 void loop(){
   
   ///////////////////////////////////////////////////////////////////////////////////
-  // ESTADO INICIAL
-  // AGUARDANDO COMANDO PARA INICIAR A BUSCA DE CONTAINERS
-  int comand_identified = 0;
-  int start_comand 		  = 0;
+  // INITIAL STATE
+  // WAITING FOR COMMAND TO START SEARCHING FOR CONTAINERS
+  int command_identified = 0;
+  int start_command      = 0;
   
   String str = "";
   
-  Serial.println("ESP: Aguardando comando pela Serial para iniciar a busca... (begin)");
+  Serial.println("ESP: Waiting for command via Serial to start search... (begin)");
   
-  while(!start_comand){
-   	if (Serial.available() > 0) { 	// Verifica se há dados disponíveis na serial
-      str = Serial.readString();    // Lê os dados recebidos como string
-      str.trim();                   // Remove espaços em branco do início e do fim da string
-      comand_identified = 1;
+  while(!start_command){
+    if (Serial.available() > 0) {  // Check if data is available on the serial
+      str = Serial.readString();   // Read the received data as a string
+      str.trim();                  // Remove whitespace from the start and end of the string
+      command_identified = 1;
     }
       
-    if(comand_identified){
+    if(command_identified){
       Serial.print("ESP: ");
       Serial.println(str);
 
-      // Verifica se a string recebida é igual a "begin"
+      // Check if the received string equals "begin"
       if (str.equals("begin")) {
-        Serial.println("ESP: Comando de inicio recebido!");
-        start_comand = 1;
+        Serial.println("ESP: Start command received!");
+        start_command = 1;
       } else {
-        Serial.println("ESP: Comando invalido!");
+        Serial.println("ESP: Invalid command!");
         str = "";
       }
 
@@ -137,59 +136,59 @@ void loop(){
     }
 
     delay(5);
-    comand_identified = 0;
+    command_identified = 0;
   }
   
   ///////////////////////////////////////////////////////////////////////////////////
   
-  // ESTADO DE BUSCA DO CONTAINER SELECIONADO
+  // SELECTED CONTAINER SEARCH STATE
   /* 
-  AS INFORMAÇÕES RECEBIDAS AQUI DEVEM SER NO FORMATO:
+  THE INFORMATION RECEIVED HERE MUST BE IN THE FORMAT:
     "sxxx zyyy",
-    ONDE:
-    s é o sinal de delta_x (+ ou -);
-    xxx são os 3 caracteres de delta_x;
-    z é o sinal de delta_y (+ ou -);
-    yyy são os 3 caracteres de delta_y.
+    WHERE:
+    s is the sign of delta_x (+ or -);
+    xxx are the 3 characters of delta_x;
+    z is the sign of delta_y (+ or -);
+    yyy are the 3 characters of delta_y.
   */
   int container_centralized = 0;
   str = "";
   
-  Serial.println("ESP: Aguardando posicao do container...");
+  Serial.println("ESP: Waiting for container position...");
   
-  unsigned long tempo_inicio_x = millis(); 	// Salva o tempo de início de centralização em x
-  unsigned long tempo_inicio_y = millis(); 	// Salva o tempo de início de centralização em y
-  unsigned long tempo_decorrido_x = 0; 		  // Variável para armazenar o tempo gasto para realizar a centralização em x
-  unsigned long tempo_decorrido_y = 0; 		  // Variável para armazenar o tempo gasto para realizar a centralização em y
+  unsigned long start_time_x = millis();   // Save the start time of x centralization
+  unsigned long start_time_y = millis();   // Save the start time of y centralization
+  unsigned long elapsed_time_x = 0;        // Variable to store the time taken for x centralization
+  unsigned long elapsed_time_y = 0;        // Variable to store the time taken for y centralization
   
   while(!container_centralized){
-    // SETAR VELOCIDADE DOS MOTORES DE TRANSLAÇÃO DE ACORDO COM O POTENCIOMETRO DE VELOCIDADE
+    // SET MOTOR SPEED ACCORDING TO THE SPEED POTENTIOMETER
     speed();
 
-    if (Serial.available() > 0) { 	// Verifica se há dados disponíveis na serial
-      str = Serial.readString();    // Lê os dados recebidos como string
-      str.trim();                   // Remove espaços em branco do início e do fim da string
-      comand_identified = 1;
+    if (Serial.available() > 0) {  // Check if data is available on the serial
+      str = Serial.readString();   // Read the received data as a string
+      str.trim();                  // Remove whitespace from the start and end of the string
+      command_identified = 1;
     }
       
-    if(comand_identified){
-      // VERIFICAR COMANDO
+    if(command_identified){
+      // CHECK COMMAND
       // Serial.print("ESP: ");
       // Serial.print(str);
       
       /* 
-      AS INFORMAÇÕES RECEBIDAS AQUI DEVEM SER NO FORMATO:
+      THE INFORMATION RECEIVED HERE MUST BE IN THE FORMAT:
         "sxxx zyyy",
-        ONDE:
-        s é o sinal de delta_x (+ ou -);
-        xxx são os 3 caracteres de delta_x;
-        z é o sinal de delta_y (+ ou -);
-        yyy são os 3 caracteres de delta_y.
+        WHERE:
+        s is the sign of delta_x (+ or -);
+        xxx are the 3 characters of delta_x;
+        z is the sign of delta_y (+ or -);
+        yyy are the 3 characters of delta_y.
       */
-      String str_delta_x = str.substring(0, 4); // Extrai os primeiros 4 caracteres (delta_x)
-      String str_delta_y = str.substring(5, 9); // Extrai os ultimos   4 caracteres (delta_y)
+      String str_delta_x = str.substring(0, 4); // Extract the first 4 characters (delta_x)
+      String str_delta_y = str.substring(5, 9); // Extract the last 4 characters (delta_y)
 
-      // Converte as strings para números inteiros
+      // Convert strings to integers
       delta_x = str_delta_x.toInt();
       delta_y = str_delta_y.toInt();
       
@@ -198,69 +197,69 @@ void loop(){
       // Serial.print("ESP: delta_y: ");
       // Serial.print(delta_y);
       
-      if(delta_x > RANGE_ERRO_PERMITIDO_POSICAO_CONTAINER){             // CÂMERA ESTÁ À ESQUERDA DO CENTRO DO CONTAINER
+      if(delta_x > CONTAINER_POSITION_ERROR_RANGE){              // CAMERA IS TO THE LEFT OF THE CONTAINER CENTER
 
-        if(delta_y > RANGE_ERRO_PERMITIDO_POSICAO_CONTAINER){           // CÂMERA ESTÁ ABAIXO DO CENTRO DO CONTAINER
-			    move_1_forward_2_forward();
+        if(delta_y > CONTAINER_POSITION_ERROR_RANGE){            // CAMERA IS BELOW THE CONTAINER CENTER
+          move_1_forward_2_forward();
         }
-        else if(delta_y < - RANGE_ERRO_PERMITIDO_POSICAO_CONTAINER){    // CÂMERA ESTÁ ACIMA DO CENTRO DO CONTAINER
+        else if(delta_y < -CONTAINER_POSITION_ERROR_RANGE){      // CAMERA IS ABOVE THE CONTAINER CENTER
           move_1_forward_2_backward();
         }
-        else{                                                           // CÂMERA ESTÁ CENTRALIZADA NO CONTAINER NO SENTIDO VERTICAL
-          // Serial.print("ESP: Centralizado em y");
-          if(tempo_decorrido_y == 0){
-            tempo_decorrido_y = millis() - tempo_inicio_y;
+        else{                                                    // CAMERA IS CENTERED VERTICALLY ON THE CONTAINER
+          // Serial.print("ESP: Centered in y");
+          if(elapsed_time_y == 0){
+            elapsed_time_y = millis() - start_time_y;
           }
           move_1_forward_2_stop();
         }
       }
-      else if(delta_x < - RANGE_ERRO_PERMITIDO_POSICAO_CONTAINER){      // CÂMERA ESTÁ À DIREITA DO CENTRO DO CONTAINER
+      else if(delta_x < -CONTAINER_POSITION_ERROR_RANGE){        // CAMERA IS TO THE RIGHT OF THE CONTAINER CENTER
         
-        if(delta_y > RANGE_ERRO_PERMITIDO_POSICAO_CONTAINER){           // CÂMERA ESTÁ ABAIXO DO CENTRO DO CONTAINER
+        if(delta_y > CONTAINER_POSITION_ERROR_RANGE){            // CAMERA IS BELOW THE CONTAINER CENTER
           move_1_backward_2_forward();
         }
-        else if(delta_y < - RANGE_ERRO_PERMITIDO_POSICAO_CONTAINER){    // CÂMERA ESTÁ ACIMA DO CENTRO DO CONTAINER
+        else if(delta_y < -CONTAINER_POSITION_ERROR_RANGE){      // CAMERA IS ABOVE THE CONTAINER CENTER
           move_1_backward_2_backward();
         }
-        else{                                                           // CÂMERA ESTÁ CENTRALIZADA NO CONTAINER NO SENTIDO VERTICAL
-          // Serial.print("ESP: Centralizado em y");
-          if(tempo_decorrido_y == 0){
-            tempo_decorrido_y = millis() - tempo_inicio_y;
+        else{                                                    // CAMERA IS CENTERED VERTICALLY ON THE CONTAINER
+          // Serial.print("ESP: Centered in y");
+          if(elapsed_time_y == 0){
+            elapsed_time_y = millis() - start_time_y;
           }
           move_1_backward_2_stop();
         }
       }
-      else{                                                             // CÂMERA ESTÁ CENTRALIZADA NO CONTAINER NO SENTIDO HORIZONTAL
-        // Serial.print("ESP: Centralizado em x");
-        if(tempo_decorrido_x == 0){
-          tempo_decorrido_x = millis() - tempo_inicio_x;
+      else{                                                      // CAMERA IS CENTERED HORIZONTALLY ON THE CONTAINER
+        // Serial.print("ESP: Centered in x");
+        if(elapsed_time_x == 0){
+          elapsed_time_x = millis() - start_time_x;
         }
         
-        if(delta_y > RANGE_ERRO_PERMITIDO_POSICAO_CONTAINER){           // CÂMERA ESTÁ ABAIXO DO CENTRO DO CONTAINER
+        if(delta_y > CONTAINER_POSITION_ERROR_RANGE){            // CAMERA IS BELOW THE CONTAINER CENTER
           move_1_stop_2_forward();      
         }
-        else if(delta_y < - RANGE_ERRO_PERMITIDO_POSICAO_CONTAINER){    // CÂMERA ESTÁ ACIMA DO CENTRO DO CONTAINER
+        else if(delta_y < -CONTAINER_POSITION_ERROR_RANGE){      // CAMERA IS ABOVE THE CONTAINER CENTER
           move_1_stop_2_backward();
         }
-        else{                                                           // CÂMERA ESTÁ CENTRALIZADA EM AMBOS SENTIDOS !!!
-          if(tempo_decorrido_y == 0){
-            tempo_decorrido_y = millis() - tempo_inicio_y;
+        else{                                                    // CAMERA IS CENTERED IN BOTH DIRECTIONS !!!
+          if(elapsed_time_y == 0){
+            elapsed_time_y = millis() - start_time_y;
           }
           
           move_1_stop_2_stop();
           
-          Serial.print("ESP: container centralizado");
+          Serial.print("ESP: container centered");
           container_centralized = 1;
         }
       }
       
       if(!container_centralized){
-        // Serial.print("ESP: Ainda nao chegou no centro do container...");
+        // Serial.print("ESP: Not yet centered on the container...");
       }
        
-      // Reseta as variáveis 
+      // Reset variables 
       str = "";
-      comand_identified = 0; 
+      command_identified = 0; 
     }
     
     delay(10);
@@ -268,154 +267,162 @@ void loop(){
   
   ///////////////////////////////////////////////////////////////////////////////////
   
-  // ESTADO DE IÇAMENTO DA CARGA
-  // DELAY PARA DAR TEMPO DO BACKEND RECEBER O COMANDO INDICANDO QUE O CONTAINER ESTA CENTRALIZADO
+  // PICKING UP CONTAINER STATE
+  // DELAY TO ALLOW ELECTROMAGNET TO CONNECT TO THE CONTAINER
   delay(2000);
 
-  Serial.println("ESP: Icando carga...");
-  pegar_carga_e_icar();
-  Serial.println("ESP: Carga icada");
+  Serial.print("ESP: Picking up container...");
+  lift_load();
+  delay(ELECTROMAGNET_DOWN_TIME);
   
   ///////////////////////////////////////////////////////////////////////////////////
   
-  // ESTADO DE CARREGAMENTO DO CONTAINER PARA O CARRINHO AUTÔNOMO
-  Serial.print("ESP: Tempo decorrido x: ");
-  Serial.println(tempo_decorrido_x);
-  Serial.print("ESP: Tempo decorrido y: ");
-  Serial.println(tempo_decorrido_y);
+  // LOADING CONTAINER TO THE AUTONOMOUS CART
+  Serial.print("ESP: Elapsed time x: ");
+  Serial.println(elapsed_time_x);
+  Serial.print("ESP: Elapsed time y: ");
+  Serial.println(elapsed_time_y);
   
-  Serial.println("ESP: Levando container para o carrinho...");
+  Serial.println("ESP: Transporting container to the cart...");
   
-  if(tempo_decorrido_x <= tempo_decorrido_y + TEMPO_CENTRO_PONTE_ATE_CARRINHO){
+  if(elapsed_time_x <= elapsed_time_y + TIME_BRIDGE_CENTER_TO_CART){
     move_1_backward_2_backward();
-  	delay(tempo_decorrido_x);
+    delay(elapsed_time_x);
     
     move_1_stop_2_backward();
-  	delay(tempo_decorrido_y + TEMPO_CENTRO_PONTE_ATE_CARRINHO - tempo_decorrido_x);
+    delay(elapsed_time_y + TIME_BRIDGE_CENTER_TO_CART - elapsed_time_x);
   }
   else{
     move_1_backward_2_backward();
-  	delay(tempo_decorrido_y + TEMPO_CENTRO_PONTE_ATE_CARRINHO);
+    delay(elapsed_time_y + TIME_BRIDGE_CENTER_TO_CART);
     
     move_1_backward_2_stop();
-  	delay(tempo_decorrido_x - (tempo_decorrido_y + TEMPO_CENTRO_PONTE_ATE_CARRINHO));
+    delay(elapsed_time_x - (elapsed_time_y + TIME_BRIDGE_CENTER_TO_CART));
   }
   
-  Serial.println("ESP: Container centralizado em cima do carrinho");
+  Serial.println("ESP: Container centered above the cart");
   move_1_stop_2_stop();
   
   ///////////////////////////////////////////////////////////////////////////////////
   
-  // ESTADO DE COLOCAR O CONTAINER NO CARRINHO AUTÔNOMO
-  Serial.println("ESP: Colocando container em cima do carrinho...");
-  abaixar_carga_e_soltar();
+  // PLACING THE CONTAINER ON THE AUTONOMOUS CART
+  Serial.println("ESP: Placing container on the cart...");
+  lower_load();
+  delay(ELECTROMAGNET_DOWN_TIME);
   
   ///////////////////////////////////////////////////////////////////////////////////
   
-  // ESTADO DE VOLTAR A PONTE PARA A POSIÇÃO CENTRAL
-  Serial.println("ESP: Movendo carro de volta para a posicao central");
+  // MOVING THE BRIDGE BACK TO THE CENTRAL POSITION
+  Serial.println("ESP: Moving the car back to the central position");
 
   move_1_stop_2_forward();
-  delay(TEMPO_CENTRO_PONTE_ATE_CARRINHO);
+  delay(TIME_BRIDGE_CENTER_TO_CART);
   move_1_stop_2_stop();
   Serial.print("ESP: end");
 
-  // DELAY PARA DAR TEMPO DO BACKEND RECEBER O COMANDO INDICANDO QUE O CICLO ESTA COMPLETO
+  // DELAY TO ALLOW THE BACKEND TO RECEIVE THE COMMAND INDICATING THE CYCLE IS COMPLETE
   delay(2000);
   
   ///////////////////////////////////////////////////////////////////////////////////
 }
 
+///////////////////////// FUNCTION DEFINITIONS //////////////////////////////////////
 void speed(){
-  int aux = analogRead(VELOCIDADE_MOT_MOV);
-  aux = map(aux, 0, 4095, 0 , 255);
-  analogWrite(EN_A, aux);
-  analogWrite(EN_B, aux);
+  int motor_speed = analogRead(MOTOR_MOV_SPEED_PIN);
+  motor_speed = map(motor_speed, 0, 4095, 0, 255);
+  analogWrite(EN_A_PIN, motor_speed);
+  analogWrite(EN_B_PIN, motor_speed);
 }
 
-void move(int in1_, int in2_, int in3_, int in4_) {
- // MOTOR 1 - x
- digitalWrite(IN1, in1_);
- digitalWrite(IN2, in2_);
- // MOTOR 2 - y
- digitalWrite(IN3, in3_);
- digitalWrite(IN4, in4_);
+void move(int in1_, int in2_, int in3_, int in4_){
+  digitalWrite(IN1_PIN, in1_);
+  digitalWrite(IN2_PIN, in2_);
+  digitalWrite(IN3_PIN, in3_);
+  digitalWrite(IN4_PIN, in4_);
 }
 
 void move_1_forward_2_forward(){
-  move(1,0,1,0);
+  move(HIGH, LOW, HIGH, LOW);
 }
+
 void move_1_forward_2_stop(){
-  move(1,0,0,0);
+  move(HIGH, LOW, LOW, LOW);
 }
+
 void move_1_forward_2_backward(){
-  move(1,0,0,1);
+  move(HIGH, LOW, LOW, HIGH);
 }
+
 void move_1_stop_2_forward(){
-  move(0,0,1,0);
+  move(LOW, LOW, HIGH, LOW);
 }
+
 void move_1_stop_2_stop(){
-  move(0,0,0,0);
+  move(LOW, LOW, LOW, LOW);
 }
+
 void move_1_stop_2_backward(){
-  move(0,0,0,1);
+  move(LOW, LOW, LOW, HIGH);
 }
+
 void move_1_backward_2_forward(){
-  move(0,1,1,0);
+  move(LOW, HIGH, HIGH, LOW);
 }
+
 void move_1_backward_2_stop(){
-  move(0,1,0,0);
+  move(LOW, HIGH, LOW, LOW);
 }
+
 void move_1_backward_2_backward(){
-  move(0,1,0,1);
+  move(LOW, HIGH, LOW, HIGH);
 }
 
 void move_to_initial_position(){
   bool initial_position_x_reached = false;
   bool initial_position_y_reached = false;
   
-  Serial.println("ESP: Movendo o carro para a posicao inicial...");
+  Serial.println("ESP: Moving the car to the initial position...");
   speed();
   move_1_backward_2_backward();
   
   while(1){
     speed();
     
-    // VERIFICAR OS SENSORES DE FIM DE CURSO
-    lim_x_min = digitalRead(LIM_X_MIN);
-    lim_y_min = digitalRead(LIM_Y_MIN);
+    // CHECK THE LIMIT SWITCH SENSORS
+    lim_x_min = digitalRead(LIM_X_MIN_PIN);
+    lim_y_min = digitalRead(LIM_Y_MIN_PIN);
     
-    // SE AMBOS OS SENSORES ESTIVEREM ATIVADOS, ESTAMOS
-    // NA POSIÇÃO INICIAL x = 0 e y = 0
-    // AMBOS OS MOTORES DEVEM SER DESATIVADOS
-    // E SAÍMOS DESSE LOOP INICIAL
+    // IF BOTH SENSORS ARE ACTIVATED, WE ARE IN THE
+    // INITIAL POSITION x = 0 and y = 0
+    // BOTH MOTORS MUST BE DEACTIVATED
+    // AND WE EXIT THIS INITIAL LOOP
     if(lim_x_min == HIGH && lim_y_min == HIGH){
       move_1_stop_2_stop();
-      Serial.println("ESP: Posicao inicial atingida");
+      Serial.println("ESP: Initial position reached");
       break;
     }
-    // SE APENAS O SENSOR LIMITE MININO X ESTIVER ATIVADO
-    // APENAS O MOTOR DE TRANSLAÇÃO X DEVE SER DESATIVADO
+    // IF ONLY THE X MINIMUM LIMIT SENSOR IS ACTIVATED
+    // ONLY THE X TRANSLATION MOTOR SHOULD BE DEACTIVATED
     if(!initial_position_x_reached && lim_x_min == HIGH){
       initial_position_x_reached = true;
       move_1_stop_2_backward();
-      Serial.println("ESP: Posicao x inicial atingida");
+      Serial.println("ESP: Initial x position reached");
     }
-    // SE AEPNAS O SENSOR LIMITE MININO Y ESTIVER ATIVADO
-    // APENAS O MOTOR DE TRANSLAÇÃO X DEVE SER DESATIVADO
+    // IF ONLY THE Y MINIMUM LIMIT SENSOR IS ACTIVATED
+    // ONLY THE X TRANSLATION MOTOR SHOULD BE DEACTIVATED
     if(!initial_position_y_reached && lim_y_min == HIGH){
       initial_position_y_reached = true;
       move_1_backward_2_stop();
-      Serial.println("ESP: Posicao y inicial atingida");
+      Serial.println("ESP: Initial y position reached");
     }
   }
 }
 
-// PRÉ REQUISITO: CARRINHO ESTAR NA POSIÇÃO (0, 0)
+// PREREQUISITE: CART MUST BE IN POSITION (0, 0)
 void move_to_central_position(){
   move_to_initial_position();
   
-  Serial.println("ESP: Movendo o carro para a posicao central...");
+  Serial.println("ESP: Moving the car to the central position...");
 
   speed();
 
@@ -425,45 +432,52 @@ void move_to_central_position(){
   delay(1000);
   move_1_stop_2_stop();
   
-  Serial.println("ESP: Posicao central atingida!");
+  Serial.println("ESP: Central position reached!");
 }
 
-void pegar_carga_e_icar(){
-  servo.write(VALOR_PARADO_SERVO - VELOCIDADE_SERVO); // sentido horário
-  delay(TEMPO_ABAIXAR_ELETROIMA);
-  servo.write(VALOR_PARADO_SERVO);
-  digitalWrite(ELETROIMA, HIGH);
+void lift_load(){
+  servo.write(SERVO_STOPPED_VALUE - SERVO_SPEED); // clockwise
+  delay(ELECTROMAGNET_DOWN_TIME);
+  servo.write(SERVO_STOPPED_VALUE);
+  digitalWrite(ELECTROMAGNET_PIN, HIGH);
   delay(1000);
-  servo.write(VALOR_PARADO_SERVO + VELOCIDADE_SERVO); // sentido anti-horário
-  delay(TEMPO_ABAIXAR_ELETROIMA);
-  servo.write(VALOR_PARADO_SERVO);
+  servo.write(SERVO_STOPPED_VALUE + SERVO_SPEED); // counterclockwise
+  delay(ELECTROMAGNET_DOWN_TIME);
+  servo.write(SERVO_STOPPED_VALUE);
 }
 
-void abaixar_carga_e_soltar(){
-  servo.write(VALOR_PARADO_SERVO - VELOCIDADE_SERVO); // sentido horário
-  delay(TEMPO_ABAIXAR_ELETROIMA);
-  servo.write(VALOR_PARADO_SERVO);
-  digitalWrite(ELETROIMA, LOW);
+void lower_load(){
+  servo.write(SERVO_STOPPED_VALUE - SERVO_SPEED); // clockwise
+  delay(ELECTROMAGNET_DOWN_TIME);
+  servo.write(SERVO_STOPPED_VALUE);
+  digitalWrite(ELECTROMAGNET_PIN, LOW);
   delay(1000);
-  servo.write(VALOR_PARADO_SERVO + VELOCIDADE_SERVO); // sentido anti-horário
-  delay(TEMPO_ABAIXAR_ELETROIMA);
-  servo.write(VALOR_PARADO_SERVO);
+  servo.write(SERVO_STOPPED_VALUE + SERVO_SPEED); // counterclockwise
+  delay(ELECTROMAGNET_DOWN_TIME);
+  servo.write(SERVO_STOPPED_VALUE);
 }
 
-void lim_min_x_interruption(){
-  move_1_stop_2_stop();  
-  //move_to_central_position();
-  Serial.println("ESP: Interrupção ativada, parando os motores...");
-}
-void lim_max_x_interruption(){
+// INTERRUPT FUNCTION DEFINITIONS
+void lim_min_x_interrupt(){
+  // Stop all movement if X min limit is reached
   move_1_stop_2_stop();
-  move_to_central_position();
+  lim_x_min = 1;
 }
-void lim_min_y_interruption(){
+
+void lim_max_x_interrupt(){
+  // Stop all movement if X max limit is reached
   move_1_stop_2_stop();
-  move_to_central_position();
+  lim_x_max = 1;
 }
-void lim_max_y_interruption(){
+
+void lim_min_y_interrupt(){
+  // Stop all movement if Y min limit is reached
   move_1_stop_2_stop();
-  move_to_central_position();
+  lim_y_min = 1;
+}
+
+void lim_max_y_interrupt(){
+  // Stop all movement if Y max limit is reached
+  move_1_stop_2_stop();
+  lim_y_max = 1;
 }
