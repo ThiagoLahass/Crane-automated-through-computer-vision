@@ -1,5 +1,8 @@
 #include <ESP32Servo.h>
 
+#define DEBOUNCE_TIME 200 //ms
+unsigned long timestamp_last_activation= 0;
+
 // SETUP SERVO
 #define SERVO_STOPPED_VALUE            93
 #define SERVO_SPEED                    5
@@ -122,25 +125,27 @@ void lift_load();
 void lower_load();
 
 // INTERRUPT FUNCTIONS
+
 /**
  * @brief Interrupt function for X minimum limit switch.
  */
-void lim_min_x_interrupt();
+void IRAM_ATTR lim_min_x_interrupt();
 
 /**
  * @brief Interrupt function for X maximum limit switch.
  */
-void lim_max_x_interrupt();
+void IRAM_ATTR lim_max_x_interrupt();
 
 /**
  * @brief Interrupt function for Y minimum limit switch.
  */
-void lim_min_y_interrupt();
+void IRAM_ATTR lim_min_y_interrupt();
 
 /**
  * @brief Interrupt function for Y maximum limit switch.
  */
-void lim_max_y_interrupt();
+void IRAM_ATTR lim_max_y_interrupt();
+
 //////////////////////////////////////////////////////////////////////////////////////
 
 void setup(){
@@ -472,7 +477,7 @@ void move_to_initial_position(){
     // INITIAL POSITION x = 0 and y = 0
     // BOTH MOTORS MUST BE DEACTIVATED
     // AND WE EXIT THIS INITIAL LOOP
-    if(lim_x_min == HIGH && lim_y_min == HIGH){
+    if(lim_x_min == HIGH || lim_y_min == HIGH){
       move_1_stop_2_stop();
       Serial.println("ESP: Initial position reached");
       lim_x_min = 0;
@@ -539,33 +544,53 @@ void lower_load(){
 
 // INTERRUPT FUNCTION DEFINITIONS
 void lim_min_x_interrupt(){
-  // Stop all movement if X min limit is reached
-  move_1_stop_2_stop();
-  Serial.println("ESP: LIM MIN X reached");
-  move_to_initial_position();
-  lim_x_min = 1;
+  // Checks if the debounce time has been met
+  if ( (millis() - timestamp_last_activation) >= DEBOUNCE_TIME ) {
+    move_1_stop_2_stop();
+    Serial.println("ESP: LIM MIN X reached");
+    delay(1000);
+    move_to_initial_position();
+    lim_x_min = 1;
+
+    timestamp_last_activation = millis();
+  }
 }
 
 void lim_max_x_interrupt(){
-  // Stop all movement if X max limit is reached
-  move_1_stop_2_stop();
-  Serial.println("ESP: LIM MAX X reached");
-  move_to_initial_position();
-  lim_x_max = 1;
+  // Checks if the debounce time has been met
+  if ( (millis() - timestamp_last_activation) >= DEBOUNCE_TIME ) {
+    move_1_stop_2_stop();
+    Serial.println("ESP: LIM MAX X reached");
+    delay(1000);
+    move_to_initial_position();
+    lim_x_max = 1;
+
+    timestamp_last_activation = millis();
+  }
 }
 
 void lim_min_y_interrupt(){
-  // Stop all movement if Y min limit is reached
-  move_1_stop_2_stop();
-  Serial.println("ESP: LIM MIX Y reached");
-  move_to_initial_position();
-  lim_y_min = 1;
+  // Checks if the debounce time has been met
+  if ( (millis() - timestamp_last_activation) >= DEBOUNCE_TIME ) {
+    move_1_stop_2_stop();
+    Serial.println("ESP: LIM MIX Y reached");
+    delay(1000);
+    move_to_initial_position();
+    lim_y_min = 1;
+
+    timestamp_last_activation = millis();
+  }
 }
 
 void lim_max_y_interrupt(){
-  // Stop all movement if Y max limit is reached
-  move_1_stop_2_stop();
-  Serial.println("ESP: LIM MAX Y reached");
-  move_to_initial_position();
-  lim_y_max = 1;
+  // Checks if the debounce time has been met
+  if ( (millis() - timestamp_last_activation) >= DEBOUNCE_TIME ) {
+    move_1_stop_2_stop();
+    Serial.println("ESP: LIM MAX Y reached");
+    delay(1000);
+    move_to_initial_position();
+    lim_y_max = 1;
+
+    timestamp_last_activation = millis();
+  }
 }
