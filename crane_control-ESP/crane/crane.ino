@@ -18,13 +18,13 @@ Servo servo;
 #define TIME_BRIDGE_CENTER_TO_CART     5000
 
 // SETUP MOTORS
-#define EN_A_PIN     19
-#define IN1_PIN      18
-#define IN2_PIN      15
-#define EN_B_PIN     17
-#define IN3_PIN      16
-#define IN4_PIN       4
-#define MOTOR_MOV_SPEED_PIN 0
+#define EN_A_PIN              19
+#define IN1_PIN               18
+#define IN2_PIN               15
+#define EN_B_PIN              17
+#define IN3_PIN               16
+#define IN4_PIN               4
+#define MOTOR_MOV_SPEED_PIN   0
 
 // LIMIT SWITCH SENSORS
 #define LIM_X_MIN_PIN  12
@@ -39,6 +39,7 @@ int lim_x_min = 0;
 int lim_x_max = 0;
 int lim_y_min = 0;
 int lim_y_max = 0;
+int end_of_course = 0;
 
 ///////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////// FUNCTION HEADERS ///////////////////////////////////
@@ -123,8 +124,6 @@ void lift_load();
  */
 void lower_load();
 
-// INTERRUPT FUNCTIONS
-
 /**
  * @brief Interrupt function for X minimum limit switch.
  */
@@ -179,7 +178,7 @@ void setup(){
   
   // SETUP STATE
   // MOVE THE CAR TO THE INITIAL POSITION (0, 0)
-  // THEN MOVE TO THE CENTER OF THE BRIDGE TO HAVE A VIEW OF THE CONTAINERS
+  // THEN MOVE TO THE CENTER OF THE BRIDGE TO HAVE A HOLISCT VIEW OF THE CONTAINERS
   // move_to_central_position();
   
   delay(100);
@@ -235,7 +234,7 @@ void loop(){
   ///////////////////////// SELECTED CONTAINER SEARCH STATE /////////////////////////
   ///////////////////////////////////////////////////////////////////////////////////
   // -> 'begin' COMMAND RECEIVED FROM ESP, START SEARCHING CONTAINER
-  /* -> THE INFORMATION RECEIVED HERE MUST BE IN THE FORMAT:
+  /* -> THE DATA RECEIVED HERE FROM ESP MUST BE IN THE FORMAT:
           "sxxx zyyy",
           WHERE:
           s is the sign of delta_x (+ or -);
@@ -254,7 +253,23 @@ void loop(){
   unsigned long elapsed_time_y = 0;        // Variable to store the time taken for y centralization
   
   while(!container_centralized){
-    // SET MOTOR SPEED ACCORDING TO THE SPEED POTENTIOMETER
+
+    // CHECKING IF ANY OF THE END OF COURSE SENSORS HAVE BEEN ACTIVATED
+    if(lim_x_min == 1 || lim_x_max == 1 || lim_y_min == 1 || lim_y_max == 1){
+      Serial.println("ESP: End of course activated");
+      delay(1000);
+      move_to_central_position();
+      lim_x_min = 0;
+      lim_x_max = 0;
+      lim_y_min = 0;
+      lim_y_max = 0;
+
+      end_of_course = 1;
+      
+      break;
+    }
+
+    // SET MOTOR SPEED ACCORDING TO THE SPEED CONTROL POTENTIOMETER
     speed();
 
     if (Serial.available() > 0) {  // Check if data is available on the serial
@@ -278,7 +293,7 @@ void loop(){
         yyy are the 3 characters of delta_y.
       */
       String str_delta_x = str.substring(0, 4); // Extract the first 4 characters (delta_x)
-      String str_delta_y = str.substring(5, 9); // Extract the last 4 characters (delta_y)
+      String str_delta_y = str.substring(5, 9); // Extract the last  4 characters (delta_y)
 
       // Convert strings to integers
       delta_x = str_delta_x.toInt();
@@ -355,6 +370,12 @@ void loop(){
     }
     
     delay(10);
+  }
+
+  // IF END OF COURSE IS ACTIVATED, WE MUST RESTART THE LOOP
+  if(end_of_course == 1){
+    end_of_course = 0;
+    continue;
   }
 
   // DELAY TO ALLOW ESP TO RECEIVE INFORMATION FROM THE SERIAL THAT THE CONTAINER IS CENTRALIZED
@@ -491,8 +512,8 @@ void move_to_initial_position(){
     // IF BOTH SENSORS ARE ACTIVATED, WE ARE IN THE
     // INITIAL POSITION x = 0 and y = 0
     // BOTH MOTORS MUST BE DEACTIVATED
-    // AND WE EXIT THIS INITIAL LOOP
-    if(lim_x_min == HIGH || lim_y_min == HIGH){
+    // AND WE EXIT THIS LOOP
+    if(lim_x_min == 1 && lim_y_min == 1){
       move_1_stop_2_stop();
       Serial.println("ESP: Initial position reached");
       lim_x_min = 0;
@@ -503,14 +524,14 @@ void move_to_initial_position(){
     }
     // IF ONLY THE X MINIMUM LIMIT SENSOR IS ACTIVATED
     // ONLY THE X TRANSLATION MOTOR SHOULD BE DEACTIVATED
-    if(!initial_position_x_reached && lim_x_min == HIGH){
+    if(!initial_position_x_reached && lim_x_min == 1){
       initial_position_x_reached = true;
       move_1_stop_2_backward();
       Serial.println("ESP: Initial x position reached");
     }
     // IF ONLY THE Y MINIMUM LIMIT SENSOR IS ACTIVATED
-    // ONLY THE X TRANSLATION MOTOR SHOULD BE DEACTIVATED
-    if(!initial_position_y_reached && lim_y_min == HIGH){
+    // ONLY THE Y TRANSLATION MOTOR SHOULD BE DEACTIVATED
+    if(!initial_position_y_reached && lim_y_min == 1){
       initial_position_y_reached = true;
       move_1_backward_2_stop();
       Serial.println("ESP: Initial y position reached");
@@ -518,7 +539,6 @@ void move_to_initial_position(){
   }
 }
 
-// PREREQUISITE: CART MUST BE IN POSITION (0, 0)
 void move_to_central_position(){
   move_to_initial_position();
   
@@ -562,11 +582,11 @@ void lim_min_x_interrupt(){
   // Checks if the debounce time has been met
   if ( (millis() - timestamp_last_activation) >= DEBOUNCE_TIME ) {
     move_1_stop_2_stop();
-    Serial.println("ESP: LIM MIN X reached");
-    delay(1000);
-    move_to_initial_position();
-    lim_x_min = 1;
+    // Serial.println("ESP: LIM MIN X reached");
+    // delay(1000);
+    // move_to_initial_position();
 
+    lim_x_min = 1;
     timestamp_last_activation = millis();
   }
 }
@@ -575,11 +595,11 @@ void lim_max_x_interrupt(){
   // Checks if the debounce time has been met
   if ( (millis() - timestamp_last_activation) >= DEBOUNCE_TIME ) {
     move_1_stop_2_stop();
-    Serial.println("ESP: LIM MAX X reached");
-    delay(1000);
-    move_to_initial_position();
+    // Serial.println("ESP: LIM MAX X reached");
+    // delay(1000);
+    // move_to_initial_position();
+    
     lim_x_max = 1;
-
     timestamp_last_activation = millis();
   }
 }
@@ -588,11 +608,11 @@ void lim_min_y_interrupt(){
   // Checks if the debounce time has been met
   if ( (millis() - timestamp_last_activation) >= DEBOUNCE_TIME ) {
     move_1_stop_2_stop();
-    Serial.println("ESP: LIM MIX Y reached");
-    delay(1000);
-    move_to_initial_position();
+    // Serial.println("ESP: LIM MIX Y reached");
+    // delay(1000);
+    // move_to_initial_position();
+    
     lim_y_min = 1;
-
     timestamp_last_activation = millis();
   }
 }
@@ -601,11 +621,11 @@ void lim_max_y_interrupt(){
   // Checks if the debounce time has been met
   if ( (millis() - timestamp_last_activation) >= DEBOUNCE_TIME ) {
     move_1_stop_2_stop();
-    Serial.println("ESP: LIM MAX Y reached");
-    delay(1000);
-    move_to_initial_position();
+    // Serial.println("ESP: LIM MAX Y reached");
+    // delay(1000);
+    // move_to_initial_position();
+    
     lim_y_max = 1;
-
     timestamp_last_activation = millis();
   }
 }

@@ -514,10 +514,7 @@ def main():
                             if (string == "ESP: container centered"):
                                 print("BACKEND: Centralized container, stopping tracking...")
                                 track_objects = False
-                            elif (string == "ESP: LIM MIN X reached" or 
-                                  string == "ESP: LIM MAX X reached" or
-                                  string == "ESP: LIM MIX Y reached" or
-                                  string == "ESP: LIM MAX Y reached" ):
+                            elif (string == "ESP: End of course activated" ):
                                 print("BACKEND: One of the translation limits was reached, the container was inaccessible, stopping tracking...")
                                 break
 
