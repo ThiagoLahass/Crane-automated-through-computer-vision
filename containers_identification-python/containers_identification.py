@@ -2,6 +2,7 @@ import cv2
 import numpy as np
 import serial
 import time
+import re
 
 #==================== ESP SERIAL COMMUNICATION VARIABLES AND FUNCTIONS ====================
 PORT_NAME = 'COM7'
@@ -18,8 +19,15 @@ def read_ser(port, num_char=1):
         str: The read characters, decoded as UTF-8. Returns an empty string if a decoding error occurs.
     """
     string = port.read(num_char)
+    cleaned_string = bytearray()
+    for byte in string:
+        if byte <= 0x7F:  # Consider only valid ASCII bytes
+            cleaned_string.append(byte)
     try:
-        return string.decode('utf-8')
+        decoded_string = cleaned_string.decode('ascii')
+        decoded_string_strip = decoded_string.strip()
+        return decoded_string_strip
+    
     except UnicodeDecodeError as e:
         print(f"Decoding error: {e}")
         return ""
@@ -49,35 +57,35 @@ V_MAX = 255
 # ============= TEST BEFORE USE ==========
 # initial min and max HSV filter to RED
 H_MIN_RED = 0
-H_MAX_RED = 176
-S_MIN_RED = 99
-S_MAX_RED = 136
-V_MIN_RED = 181
+H_MAX_RED = 183
+S_MIN_RED = 14
+S_MAX_RED = 141
+V_MIN_RED = 245
 V_MAX_RED = 255
 
 # initial min and max HSV filter to GREEN
-H_MIN_GREEN = 42
-H_MAX_GREEN = 103
-S_MIN_GREEN = 42
-S_MAX_GREEN = 100
-V_MIN_GREEN = 121
-V_MAX_GREEN = 240
+H_MIN_GREEN = 94
+H_MAX_GREEN = 105
+S_MIN_GREEN = 94
+S_MAX_GREEN = 187
+V_MIN_GREEN = 75
+V_MAX_GREEN = 117
 
 # initial min and max HSV filter to BLUE
-H_MIN_BLUE = 97
-H_MAX_BLUE = 108
-S_MIN_BLUE = 144
-S_MAX_BLUE = 247
-V_MIN_BLUE = 124
-V_MAX_BLUE = 255
+H_MIN_BLUE = 99
+H_MAX_BLUE = 111
+S_MIN_BLUE = 177
+S_MAX_BLUE = 248
+V_MIN_BLUE = 115
+V_MAX_BLUE = 252
 
 # initial min and max HSV filter to YELLOW
-H_MIN_YELLOW = 23
-H_MAX_YELLOW = 48
-S_MIN_YELLOW = 47
-S_MAX_YELLOW = 121
-V_MIN_YELLOW = 174
-V_MAX_YELLOW = 232
+H_MIN_YELLOW = 17
+H_MAX_YELLOW = 44
+S_MIN_YELLOW = 21
+S_MAX_YELLOW = 112
+V_MIN_YELLOW = 209
+V_MAX_YELLOW = 246
 # ============= END TEST BEFORE USE ==========
 
 RED     = 0
@@ -428,6 +436,17 @@ def main():
     create_trackbars()
     #=================== END OBJECT POSITION VARIABLES SETUP =================
 
+    # WAITING THE CRANE BE AT THE CENTRAL POSITION (DEFAULT)
+    while(1):
+        # SERIAL COMUNICATION - READ
+        string = read_ser(port, MAX_BUFF_LEN)
+        if(len(string)):
+            print(f"{string}")
+            if (string == "ESP: Cpr"):       # Received when 'Central position reached'
+                print("BACKEND: Crane at the central position, now we can start!\n")
+                break
+        time.sleep(0.1)
+
     first_loop_flag = False
 
     # FIRST WHILE LOOP - IT'S REPRESENT EVERY TIME AS THE COMAND TO SEARCH A CONTAINER IS SEND
@@ -446,20 +465,21 @@ def main():
 
                 #==================== ESP SERIAL COMUNICATION SENDING BEGIN COMAND ====================
                 # SERIAL COMUNICATION - READ
-                string = read_ser(port, MAX_BUFF_LEN)
+                string = read_ser(port, MAX_BUFF_LEN).strip()
                 print(string)
 
                 # delay to ensure that ESP has time to read and respond to the Serial
                 time.sleep(1)
 
                 # SERIAL COMUNICATION - WRITE
+                print("BACKEND: Sending 'begin' command to ESP...")
                 cmd = 'begin'
                 write_ser(port, cmd)
 
                 time.sleep(0.1)
 
                 # SERIAL COMUNICATION - READ
-                string = read_ser(port, MAX_BUFF_LEN)
+                string = read_ser(port, MAX_BUFF_LEN).strip()
                 print(string)
                 #==================== END ESP SERIAL COMUNICATION SENDING BEGIN COMAND ====================
 
@@ -506,26 +526,30 @@ def main():
                         time.sleep(0.1)
 
                         # SERIAL COMUNICATION - READ
-                        string = read_ser(port, MAX_BUFF_LEN)
+                        string = read_ser(port, MAX_BUFF_LEN).strip()
                         if(len(string)):
                             print(f"{string}")
                             # If the difference between the current position of the object in the camera
                             # and the center is within the allowed limit, ESP sends a message to our BACKEND informing this
-                            if (string == "ESP: container centered"):
+                            if (string == "ESP: Cc"):       # Received when the crane its above the select container ("Container centrilized")
                                 print("BACKEND: Centralized container, stopping tracking...")
                                 track_objects = False
-                            elif (string == "ESP: End of course activated" ):
-                                print("BACKEND: One of the translation limits was reached, the container was inaccessible, stopping tracking...")
-                                break
+                            elif (string == "ESP: EoC1"):   # Received when End of course activated, going to the center position ("End of Course 1")
+                                print("BACKEND: One of the translation limits was reached, the container was inaccessible, so we had to return to the central position and start searching for the next container...")
+                                track_objects = False
 
                     else:
-                        string = read_ser(port, MAX_BUFF_LEN)
+                        string = read_ser(port, MAX_BUFF_LEN).strip()
                         if(len(string)):
                             print(f"{string}")
                             # When the bridge has completed the search cycle for a container,
                             # the ESP also sends a message to the BACKEND informing this fact
-                            if(string == "ESP: end"):
+                            if(string == "ESP: end"):       # Received when the complete cycle of take a container is ended
                                 print("BACKEND: Searching for the next container, if it is the last one, return to the first loop ('begin')")
+                                break
+                            elif (string == "ESP: EoC2"):   # Received when End of course was activated, and the center position was reached ("End of Course 2")
+                                print("BACKEND: Crane recentralized, now we can start searching for the next container...\n")
+                                time.sleep(1)
                                 break
                         
 
