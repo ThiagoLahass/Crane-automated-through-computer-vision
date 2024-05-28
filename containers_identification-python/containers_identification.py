@@ -45,15 +45,6 @@ def write_ser(port, cmd):
 #==================== END ESP SERIAL COMMUNICATION VARIABLES AND FUNCTIONS ====================
 
 #==================== OBJECT IDENTIFIER AND TRACKING VARIABLES AND FUNCTIONS ====================
-# initial min and max HSV filter values.
-# these will be changed using trackbars
-H_MIN = 0
-H_MAX = 255
-S_MIN = 0
-S_MAX = 255
-V_MIN = 0
-V_MAX = 255
-
 # ============= TEST BEFORE USE ==========
 # initial min and max HSV filter to RED
 H_MIN_RED = 0
