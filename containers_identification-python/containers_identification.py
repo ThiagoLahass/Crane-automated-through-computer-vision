@@ -2,7 +2,6 @@ import cv2
 import numpy as np
 import serial
 import time
-import re
 
 #==================== ESP SERIAL COMMUNICATION VARIABLES AND FUNCTIONS ====================
 PORT_NAME = 'COM7'
@@ -63,12 +62,12 @@ V_MIN_GREEN = 75
 V_MAX_GREEN = 117
 
 # initial min and max HSV filter to BLUE
-H_MIN_BLUE = 99
-H_MAX_BLUE = 111
-S_MIN_BLUE = 177
-S_MAX_BLUE = 248
-V_MIN_BLUE = 115
-V_MAX_BLUE = 252
+H_MIN_BLUE = 84
+H_MAX_BLUE = 105
+S_MIN_BLUE = 28
+S_MAX_BLUE = 86
+V_MIN_BLUE = 250
+V_MAX_BLUE = 255
 
 # initial min and max HSV filter to YELLOW
 H_MIN_YELLOW = 17
@@ -85,8 +84,6 @@ BLUE    = 2
 YELLOW  = 3
 
 COLORS_NAME = ["RED", "GREEN", "BLUE", "YELLOW"]
-
-COLOR = 0
 
 my_colors_thresholds = [
     [H_MIN_RED,     S_MIN_RED,      V_MIN_RED,      H_MAX_RED,      S_MAX_RED,      V_MAX_RED   ],      # RED
@@ -113,90 +110,6 @@ MAX_NUM_OBJECTS = 5
 # minimum and maximum object area
 MIN_OBJECT_AREA = 20 * 20                                   # ADJUST WHEN DOING CONTAINER DETECTION ON CRANE
 MAX_OBJECT_AREA = int(FRAME_HEIGHT * FRAME_WIDTH / 1.5)
-
-trackbar_window_name = "Trackbars"
-
-def create_trackbars():
-    """
-    Creates a trackbars window to adjust HSV values.
-    """
-    cv2.namedWindow(trackbar_window_name, cv2.WINDOW_NORMAL)
-    cv2.createTrackbar("Hue Min", trackbar_window_name, H_MIN, H_MAX, onTrackbar_H_MIN)
-    cv2.createTrackbar("Hue Max", trackbar_window_name, H_MAX, H_MAX, onTrackbar_H_MAX)
-    cv2.createTrackbar("Sat Min", trackbar_window_name, S_MIN, S_MAX, onTrackbar_S_MIN)
-    cv2.createTrackbar("Sat Max", trackbar_window_name, S_MAX, S_MAX, onTrackbar_S_MAX)
-    cv2.createTrackbar("Val Min", trackbar_window_name, V_MIN, V_MAX, onTrackbar_V_MIN)
-    cv2.createTrackbar("Val Max", trackbar_window_name, V_MAX, V_MAX, onTrackbar_V_MAX)
-
-def onTrackbar_H_MIN(value):
-    """
-    Callback to adjust Hue minimum value.
-
-    Args:
-        value (int): New minimum Hue value.
-    """
-    global H_MIN
-    H_MIN = value
-
-def onTrackbar_H_MAX(value):
-    """
-    Callback to adjust Hue maximum value.
-
-    Args:
-        value (int): New maximum Hue value.
-    """
-    global H_MAX
-    H_MAX = value
-
-def onTrackbar_S_MIN(value):
-    """
-    Callback to adjust Saturation minimum value.
-
-    Args:
-        value (int): New minimum Saturation value.
-    """
-    global S_MIN
-    S_MIN = value
-
-def onTrackbar_S_MAX(value):
-    """
-    Callback to adjust Saturation maximum value.
-
-    Args:
-        value (int): New maximum Saturation value.
-    """
-    global S_MAX
-    S_MAX = value
-
-def onTrackbar_V_MIN(value):
-    """
-    Callback to adjust Value minimum value.
-
-    Args:
-        value (int): New minimum Value value.
-    """
-    global V_MIN
-    V_MIN = value
-
-def onTrackbar_V_MAX(value):
-    """
-    Callback to adjust Value maximum value.
-
-    Args:
-        value (int): New maximum Value value.
-    """
-    global V_MAX
-    V_MAX = value
-
-def onTrackbar_COLOR(value):
-    """
-    Callback to adjust the selected container color.
-
-    Args:
-        value (int): New color index selected.
-    """
-    global COLOR
-    COLOR = value
 
 def clean_noise_morph_ops(img):
     """
@@ -424,7 +337,6 @@ def main():
     cv2.imshow("Image Original", img_original)
     cv2.imshow("Image HSV", img_HSV)
 
-    create_trackbars()
     #=================== END OBJECT POSITION VARIABLES SETUP =================
 
     # WAITING THE CRANE BE AT THE CENTRAL POSITION (DEFAULT)
