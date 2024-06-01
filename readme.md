@@ -99,4 +99,6 @@ O sistema captura imagens através da câmera integrada na ponte rolante e utili
 
 Agradecemos a todos os contribuidores e apoiadores deste projeto.
 
-![Logo do Projeto](img\logo.png)
+<p align="center">
+  <img src="img\logo.png" />
+</p>
