@@ -89,7 +89,7 @@ O sistema captura imagens através da câmera integrada na ponte rolante e utili
 4. Faça um push para a branch (`git push origin feature/nova-feature`).
 5. Abra um Pull Request.
 
-## Autores
+## Desenvolvedores
 
 - **Thiago Felippe Neitzke Lahass** - *Desenvolvedor Principal* - [Thiago Lahass](https://github.com/ThiagoLahass)
 - **Gabriel Gatti da Silva** - [Gabriel Gatti](https://github.com/gabrielgatti7)
