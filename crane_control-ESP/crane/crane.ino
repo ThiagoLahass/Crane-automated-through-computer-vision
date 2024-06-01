@@ -6,11 +6,11 @@ unsigned long timestamp_last_activation= 0;
 // SETUP SERVO
 #define SERVO_STOPPED_VALUE            93
 #define SERVO_SPEED                    5
-#define SERVO_PIN                      23
+#define SERVO_PIN                      34
 Servo servo;
 
 // SETUP ELECTROMAGNET
-#define ELECTROMAGNET_PIN              22
+#define ELECTROMAGNET_PIN              15
 
 // OTHER SETUP VARIABLES
 #define ELECTROMAGNET_DOWN_TIME        3000
@@ -18,13 +18,12 @@ Servo servo;
 #define TIME_BRIDGE_CENTER_TO_CART     5000
 
 // SETUP MOTORS
-#define EN_A_PIN              19
-#define IN1_PIN               18
-#define IN2_PIN               15
-#define EN_B_PIN              17
-#define IN3_PIN               16
-#define IN4_PIN               4
-#define MOTOR_MOV_SPEED_PIN   0
+#define EN_PIN                0
+#define IN1_PIN               5
+#define IN2_PIN               17
+#define IN3_PIN               23
+#define IN4_PIN               22
+#define MOTOR_MOV_SPEED_PIN   19
 
 // LIMIT SWITCH SENSORS
 #define LIM_X_MIN_PIN  12
@@ -152,11 +151,9 @@ void setup(){
   Serial.begin(9600);
   servo.attach(SERVO_PIN);
   
-  pinMode(EN_A_PIN, OUTPUT);
+  pinMode(EN_PIN, OUTPUT);
   pinMode(IN1_PIN, OUTPUT);
   pinMode(IN2_PIN, OUTPUT);
-  
-  pinMode(EN_B_PIN, OUTPUT);
   pinMode(IN3_PIN, OUTPUT);
   pinMode(IN4_PIN, OUTPUT);
   
@@ -173,16 +170,18 @@ void setup(){
   // Interrupt configuration
   attachInterrupt(LIM_X_MIN_PIN, lim_min_x_interrupt, RISING);
   // attachInterrupt(LIM_X_MAX_PIN, lim_max_x_interrupt, RISING);
-  // attachInterrupt(LIM_Y_MIN_PIN, lim_min_y_interrupt, RISING);
+  attachInterrupt(LIM_Y_MIN_PIN, lim_min_y_interrupt, RISING);
   // attachInterrupt(LIM_Y_MAX_PIN, lim_max_x_interrupt, RISING);
   
   // SETUP STATE
+  digitalWrite(ELECTROMAGNET_PIN, HIGH);           // THE LOGIC IS INVERSE, "HIGH" TURNS OFF THE ELETROMAGNETIC
+
   // MOVE THE CAR TO THE INITIAL POSITION (0, 0)
   // THEN MOVE TO THE CENTER OF THE BRIDGE TO HAVE A HOLISCT VIEW OF THE CONTAINERS
   move_to_central_position();
   delay(1000);
   Serial.print(" ESP: Cpr "); // Central position reached!
-  delay(1000);
+  delay(4000);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////
@@ -336,25 +335,12 @@ void loop(){
       // Serial.println(delta_x);
       // Serial.print(" ESP: delta_y: ");
       // Serial.println(delta_y);
-      
-      if(delta_x > CONTAINER_POSITION_ERROR_RANGE){              // CAMERA IS TO THE LEFT OF THE CONTAINER CENTER
 
-        if(delta_y > CONTAINER_POSITION_ERROR_RANGE){            // CAMERA IS BELOW THE CONTAINER CENTER
-          move_1_forward_2_forward();
-        }
-        else if(delta_y < -CONTAINER_POSITION_ERROR_RANGE){      // CAMERA IS ABOVE THE CONTAINER CENTER
-          move_1_forward_2_backward();
-        }
-        else{                                                    // CAMERA IS CENTERED VERTICALLY ON THE CONTAINER
-          // Serial.print(" ESP: Centered in y");
-          if(elapsed_time_y == 0){
-            elapsed_time_y = millis() - start_time_y;
-          }
-          move_1_forward_2_stop();
-        }
+      if( delta_x == 320 && delta_y == 240){                     // THERE ARE NO OBJECT VISIBLE
+        move_1_stop_2_stop();
       }
-      else if(delta_x < -CONTAINER_POSITION_ERROR_RANGE){        // CAMERA IS TO THE RIGHT OF THE CONTAINER CENTER
-        
+      else if(delta_x > CONTAINER_POSITION_ERROR_RANGE){         // CAMERA IS TO THE RIGHT OF THE CONTAINER CENTER
+
         if(delta_y > CONTAINER_POSITION_ERROR_RANGE){            // CAMERA IS BELOW THE CONTAINER CENTER
           move_1_backward_2_forward();
         }
@@ -367,6 +353,22 @@ void loop(){
             elapsed_time_y = millis() - start_time_y;
           }
           move_1_backward_2_stop();
+        }
+      }
+      else if(delta_x < -CONTAINER_POSITION_ERROR_RANGE){        // CAMERA IS TO THE RIGHT OF THE CONTAINER CENTER
+        
+        if(delta_y > CONTAINER_POSITION_ERROR_RANGE){            // CAMERA IS BELOW THE CONTAINER CENTER
+          move_1_forward_2_forward();
+        }
+        else if(delta_y < -CONTAINER_POSITION_ERROR_RANGE){      // CAMERA IS ABOVE THE CONTAINER CENTER
+          move_1_forward_2_backward();
+        }
+        else{                                                    // CAMERA IS CENTERED VERTICALLY ON THE CONTAINER
+          // Serial.print(" ESP: Centered in y");
+          if(elapsed_time_y == 0){
+            elapsed_time_y = millis() - start_time_y;
+          }
+          move_1_forward_2_stop();
         }
       }
       else{                                                      // CAMERA IS CENTERED HORIZONTALLY ON THE CONTAINER
@@ -483,8 +485,8 @@ void loop(){
 void speed(){
   int motor_speed = analogRead(MOTOR_MOV_SPEED_PIN);
   motor_speed = map(motor_speed, 0, 4095, 0, 255);
-  analogWrite(EN_A_PIN, motor_speed);
-  analogWrite(EN_B_PIN, motor_speed);
+  analogWrite(EN_PIN, motor_speed);
+  analogWrite(EN_PIN, motor_speed);
 }
 
 void move(int in1_, int in2_, int in3_, int in4_){
@@ -495,19 +497,19 @@ void move(int in1_, int in2_, int in3_, int in4_){
 }
 
 void move_1_forward_2_forward(){
-  move(HIGH, LOW, HIGH, LOW);
+  move(LOW, HIGH, LOW, HIGH);
 }
 
 void move_1_forward_2_stop(){
-  move(HIGH, LOW, LOW, LOW);
+  move(LOW, HIGH, LOW, LOW);
 }
 
 void move_1_forward_2_backward(){
-  move(HIGH, LOW, LOW, HIGH);
+  move(LOW, HIGH, HIGH, LOW);
 }
 
 void move_1_stop_2_forward(){
-  move(LOW, LOW, HIGH, LOW);
+  move(LOW, LOW, LOW, HIGH);
 }
 
 void move_1_stop_2_stop(){
@@ -515,19 +517,19 @@ void move_1_stop_2_stop(){
 }
 
 void move_1_stop_2_backward(){
-  move(LOW, LOW, LOW, HIGH);
+  move(LOW, LOW, HIGH, LOW);
 }
 
 void move_1_backward_2_forward(){
-  move(LOW, HIGH, HIGH, LOW);
+  move(HIGH, LOW, LOW, HIGH);
 }
 
 void move_1_backward_2_stop(){
-  move(LOW, HIGH, LOW, LOW);
+  move(HIGH, LOW, LOW, LOW);
 }
 
 void move_1_backward_2_backward(){
-  move(LOW, HIGH, LOW, HIGH);
+  move(HIGH, LOW, HIGH, LOW);
 }
 
 void move_to_initial_position(){
@@ -545,8 +547,8 @@ void move_to_initial_position(){
     // INITIAL POSITION x = 0 and y = 0
     // BOTH MOTORS MUST BE DEACTIVATED
     // AND WE EXIT THIS LOOP
-    // if(lim_x_min == 1 && lim_y_min == 1){
-    if(lim_x_min == 1){
+    if(initial_position_x_reached && initial_position_y_reached){
+    // if(lim_x_min == 1){
       move_1_stop_2_stop();
       Serial.println("ESP: Initial position reached");
       lim_x_min = 0;
@@ -582,9 +584,9 @@ void move_to_central_position(){
   speed();
 
   move_1_forward_2_forward();
-  delay(2000);
+  delay(1800);
   move_1_stop_2_forward();
-  delay(1000);
+  delay(3000);
   move_1_stop_2_stop();
   
   Serial.println("ESP: Central position reached!");
@@ -594,7 +596,7 @@ void lift_load(){
   servo.write(SERVO_STOPPED_VALUE - SERVO_SPEED); // clockwise
   delay(ELECTROMAGNET_DOWN_TIME);
   servo.write(SERVO_STOPPED_VALUE);
-  digitalWrite(ELECTROMAGNET_PIN, HIGH);
+  digitalWrite(ELECTROMAGNET_PIN, LOW);           // THE LOGIC IS INVERSE, "LOW" TURNS ON THE ELETROMAGNETIC
   delay(1000);
   servo.write(SERVO_STOPPED_VALUE + SERVO_SPEED); // counterclockwise
   delay(ELECTROMAGNET_DOWN_TIME);
@@ -605,7 +607,7 @@ void lower_load(){
   servo.write(SERVO_STOPPED_VALUE - SERVO_SPEED); // clockwise
   delay(ELECTROMAGNET_DOWN_TIME);
   servo.write(SERVO_STOPPED_VALUE);
-  digitalWrite(ELECTROMAGNET_PIN, LOW);
+  digitalWrite(ELECTROMAGNET_PIN, HIGH);           // THE LOGIC IS INVERSE, "HIGH" TURNS OFF THE ELETROMAGNETIC
   delay(1000);
   servo.write(SERVO_STOPPED_VALUE + SERVO_SPEED); // counterclockwise
   delay(ELECTROMAGNET_DOWN_TIME);

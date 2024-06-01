@@ -62,10 +62,10 @@ V_MIN_GREEN = 75
 V_MAX_GREEN = 117
 
 # initial min and max HSV filter to BLUE
-H_MIN_BLUE = 84
-H_MAX_BLUE = 105
-S_MIN_BLUE = 28
-S_MAX_BLUE = 86
+H_MIN_BLUE = 79
+H_MAX_BLUE = 121
+S_MIN_BLUE = 55
+S_MAX_BLUE = 139
 V_MIN_BLUE = 250
 V_MAX_BLUE = 255
 
@@ -417,6 +417,7 @@ def main():
                         # calculates the difference between the container's current position and the center of the image
                         delta_x = int (X_CENTER - x)
                         delta_y = int (Y_CENTER - y)
+                        print(f'BACKEND: Delta x = {delta_x}, Delta y = {delta_y}')
 
                         # Padding with leading zeros to guarantee 4 digits (with sign)
                         delta_x_str = str(delta_x).zfill(4)
