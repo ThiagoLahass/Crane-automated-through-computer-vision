@@ -196,6 +196,7 @@ void loop(){
 
   int command_identified = 0;
   int start_command      = 0;
+  int direction_go_back  = 0; // 1 - LEFT; 2 RIGHT
   
   String str = "";
   
@@ -277,20 +278,33 @@ void loop(){
         elapsed_time_y = millis() - start_time_y;
       }
       
-      if(elapsed_time_x <= elapsed_time_y){
+      if(direction_go_back == 1){     // 1 == LEFT
         move_1_backward_2_backward();
-        delay(elapsed_time_x);
-        move_1_stop_2_backward();
-        delay(elapsed_time_y - elapsed_time_x);
+        if(elapsed_time_x <= elapsed_time_y){
+          delay(elapsed_time_x);
+          move_1_stop_2_backward();
+          delay(elapsed_time_y - elapsed_time_x);
+        }
+        else{
+          delay(elapsed_time_y);
+          move_1_backward_2_stop();
+          delay(elapsed_time_x - elapsed_time_y);
+        }
       }
-      else{
-        move_1_backward_2_backward();
-        delay(elapsed_time_y);
-        
-        move_1_backward_2_stop();
-        delay(elapsed_time_x - elapsed_time_y);
+      else{                           // 2 == RIGHT
+        move_1_forward_2_backward();
+        if(elapsed_time_x <= elapsed_time_y){
+          delay(elapsed_time_x);
+          move_1_stop_2_backward();
+          delay(elapsed_time_y - elapsed_time_x);
+        }
+        else{
+          delay(elapsed_time_y);
+          move_1_forward_2_stop();
+          delay(elapsed_time_x - elapsed_time_y);
+        }
       }
-
+      
       move_1_stop_2_stop();
 
       Serial.print(" ESP: EoC2 ");
@@ -340,6 +354,7 @@ void loop(){
         move_1_stop_2_stop();
       }
       else if(delta_x > CONTAINER_POSITION_ERROR_RANGE){         // CAMERA IS TO THE RIGHT OF THE CONTAINER CENTER
+        direction_go_back = 1;                                   // TO GO BACK TO THE CENTER POSITION, WE NEED TO GO TO LEFT AFTER GET THE CONTAINER
 
         if(delta_y > CONTAINER_POSITION_ERROR_RANGE){            // CAMERA IS BELOW THE CONTAINER CENTER
           move_1_backward_2_forward();
@@ -355,7 +370,8 @@ void loop(){
           move_1_backward_2_stop();
         }
       }
-      else if(delta_x < -CONTAINER_POSITION_ERROR_RANGE){        // CAMERA IS TO THE RIGHT OF THE CONTAINER CENTER
+      else if(delta_x < -CONTAINER_POSITION_ERROR_RANGE){        // CAMERA IS TO THE LEFT OF THE CONTAINER CENTER
+        direction_go_back = 2;                                   // TO GO BACK TO THE CENTER POSITION, WE NEED TO GO TO RIGHT AFTER GET THE CONTAINER
         
         if(delta_y > CONTAINER_POSITION_ERROR_RANGE){            // CAMERA IS BELOW THE CONTAINER CENTER
           move_1_forward_2_forward();
@@ -430,20 +446,37 @@ void loop(){
     
     Serial.println(" ESP: Transporting container to the cart... ");
     
-    if(elapsed_time_x <= elapsed_time_y + TIME_BRIDGE_CENTER_TO_CART){
+    if(direction_go_back == 1){     // 1 == LEFT
+      if(elapsed_time_x <= elapsed_time_y + TIME_BRIDGE_CENTER_TO_CART){
+        move_1_backward_2_backward();
+        delay(elapsed_time_x);
 
-      move_1_backward_2_backward();
-      delay(elapsed_time_x);
-
-      move_1_stop_2_backward();
-      delay(elapsed_time_y + TIME_BRIDGE_CENTER_TO_CART - elapsed_time_x);
+        move_1_stop_2_backward();
+        delay(elapsed_time_y + TIME_BRIDGE_CENTER_TO_CART - elapsed_time_x);
+      }
+      else{
+        move_1_backward_2_backward();
+        delay(elapsed_time_y + TIME_BRIDGE_CENTER_TO_CART);
+        
+        move_1_backward_2_stop();
+        delay(elapsed_time_x - (elapsed_time_y + TIME_BRIDGE_CENTER_TO_CART));
+      }
     }
-    else{
-      move_1_backward_2_backward();
-      delay(elapsed_time_y + TIME_BRIDGE_CENTER_TO_CART);
-      
-      move_1_backward_2_stop();
-      delay(elapsed_time_x - (elapsed_time_y + TIME_BRIDGE_CENTER_TO_CART));
+    else{                           // 2 == RIGHT
+      if(elapsed_time_x <= elapsed_time_y + TIME_BRIDGE_CENTER_TO_CART){
+        move_1_forward_2_backward();
+        delay(elapsed_time_x);
+
+        move_1_stop_2_backward();
+        delay(elapsed_time_y + TIME_BRIDGE_CENTER_TO_CART - elapsed_time_x);
+      }
+      else{
+        move_1_forward_2_backward();
+        delay(elapsed_time_y + TIME_BRIDGE_CENTER_TO_CART);
+        
+        move_1_forward_2_stop();
+        delay(elapsed_time_x - (elapsed_time_y + TIME_BRIDGE_CENTER_TO_CART));
+      }
     }
 
     move_1_stop_2_stop();
