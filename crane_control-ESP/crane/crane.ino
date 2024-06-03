@@ -4,9 +4,9 @@
 unsigned long timestamp_last_activation= 0;
 
 // SETUP SERVO
-#define SERVO_STOPPED_VALUE            93
+#define SERVO_STOPPED_VALUE            90
 #define SERVO_SPEED                    5
-#define SERVO_PIN                      34
+#define SERVO_PIN                      13
 Servo servo;
 
 // SETUP ELECTROMAGNET
@@ -23,7 +23,7 @@ Servo servo;
 #define IN2_PIN               17
 #define IN3_PIN               23
 #define IN4_PIN               22
-#define MOTOR_MOV_SPEED_PIN   19
+#define MOTOR_MOV_SPEED_PIN   25
 
 // LIMIT SWITCH SENSORS
 #define LIM_X_MIN_PIN  12
@@ -518,7 +518,6 @@ void loop(){
 void speed(){
   int motor_speed = analogRead(MOTOR_MOV_SPEED_PIN);
   motor_speed = map(motor_speed, 0, 4095, 0, 255);
-  analogWrite(EN_PIN, motor_speed);
   analogWrite(EN_PIN, motor_speed);
 }
 
