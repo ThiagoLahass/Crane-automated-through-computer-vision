@@ -288,7 +288,7 @@ def main():
     """
     Main function to control the object detection and tracking process.
     """
-    #==================== ESP SERIAL COMUNICATION SETUP ====================
+    #==================== SETUP SERIAL COMUNICATION WITH ESP ====================
     MAX_BUFF_LEN = 1024
     SETUP 		 = False
     port 		 = None
@@ -297,7 +297,7 @@ def main():
     while(not SETUP):
         try:
             #Serial port(windows-->COM), baud rate, timeout limit
-            port = serial.Serial(PORT_NAME, 115200, timeout=0)
+            port = serial.Serial(PORT_NAME, 115200, timeout=0.1)
         except:
             if(time.time() - prev > 2): # Don't spam with msg
                 print('No serial detected, please plug your uController')
@@ -379,7 +379,7 @@ def main():
                 cmd = 'begin'
                 write_ser(port, cmd)
 
-                time.sleep(0.1)
+                time.sleep(1)
 
                 # SERIAL COMUNICATION - READ
                 string = read_ser(port, MAX_BUFF_LEN).strip()
@@ -417,17 +417,17 @@ def main():
                         # calculates the difference between the container's current position and the center of the image
                         delta_x = int (X_CENTER - x)
                         delta_y = int (Y_CENTER - y)
-                        print(f'BACKEND: Delta x = {delta_x}, Delta y = {delta_y}')
+                        # print(f'BACKEND: Delta x = {delta_x}, Delta y = {delta_y}')
 
                         # Padding with leading zeros to guarantee 4 digits (with sign)
                         delta_x_str = str(delta_x).zfill(4)
                         delta_y_str = str(delta_y).zfill(4)
 
                         # SERIAL COMUNICATION - WRITE
-                        cmd = f'{delta_x_str} {delta_y_str}'
+                        cmd = f'{delta_x_str} {delta_y_str}\n'
                         write_ser(port, cmd)
 
-                        time.sleep(0.1)
+                        # time.sleep(0.1)
 
                         # SERIAL COMUNICATION - READ
                         string = read_ser(port, MAX_BUFF_LEN).strip()

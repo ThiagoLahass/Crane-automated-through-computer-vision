@@ -149,6 +149,7 @@ void IRAM_ATTR lim_max_y_interrupt();
 
 void setup(){
   Serial.begin(115200);
+  Serial.setTimeout(100); // Set timeout to 100 milliseconds
   servo.attach(SERVO_PIN);
   
   pinMode(EN_PIN, OUTPUT);
@@ -203,7 +204,7 @@ void loop(){
   /*All strings are sent with a blank space at the beginning and at the end because we were
    sometimes facing problems with the first character being poorly encoded,
    so this was a "trick" to get around this problem*/
-  Serial.println(" ESP: Waiting for command via Serial to start search... (begin) ");
+  Serial.println("ESP: Waiting for command via Serial to start search... (begin)");
   
   while(!start_command){
     if (Serial.available() > 0) {  // Check if data is available on the serial
@@ -213,15 +214,15 @@ void loop(){
     }
       
     if(command_identified){
-      Serial.print(" ESP: ");
+      Serial.print("ESP: ");
       Serial.println(str);
 
       // Check if the received string equals "begin"
       if (str.equals("begin")) {
-        Serial.println(" ESP: Start command received! ");
+        Serial.println("ESP: Start command received!");
         start_command = 1;
       } else {
-        Serial.println(" ESP: Invalid command! ");
+        Serial.println("ESP: Invalid command!");
         str = "";
       }
 
@@ -245,10 +246,11 @@ void loop(){
           z is the sign of delta_y (+ or -);
           yyy are the 3 characters of delta_y.
         */
+  command_identified = 0;
   int container_centralized = 0;
   str = "";
   
-  Serial.println(" ESP: Receiving container position... ");
+  Serial.println("ESP: Receiving container position...");
   
   unsigned long start_time_x = millis();   // Save the start time of x centralization
   unsigned long start_time_y = millis();   // Save the start time of y centralization
@@ -262,7 +264,7 @@ void loop(){
       // We could make so:
       // Serial.print("ESP: End of course activated, going to the center position");
       // But because it is an interruption, putting a small string reduces the chances of sending only part of the string
-      Serial.print(" ESP: EoC1 ");
+      Serial.print("ESP: EoC1");
       delay(500);
 
       lim_x_min = 0;
@@ -307,7 +309,7 @@ void loop(){
       
       move_1_stop_2_stop();
 
-      Serial.print(" ESP: EoC2 ");
+      Serial.print("ESP: EoC2");
       delay(1000);
 
       end_of_course = 1;
@@ -317,17 +319,19 @@ void loop(){
 
     // SET MOTOR SPEED ACCORDING TO THE SPEED CONTROL POTENTIOMETER
     speed();
-
-    if (Serial.available() > 0) {  // Check if data is available on the serial
-      str = Serial.readString();   // Read the received data as a string
-      str.trim();                  // Remove whitespace from the start and end of the string
-      command_identified = 1;
+    if (Serial.available() > 0) {          // Check if data is available on the serial
+      str = Serial.readStringUntil('\n');  // Read the received data as a string until newline
+      str.trim();                          // Remove whitespace from the start and end of the string
+      if(!str.equals("")){
+        command_identified = 1;
+      }
     }
       
     if(command_identified){
       // CHECK COMMAND
-      // Serial.print(" ESP: ");
+      // Serial.print("ESP: '");
       // Serial.print(str);
+      // Serial.println("'");
       
       /* 
       THE INFORMATION RECEIVED HERE MUST BE IN THE FORMAT:
@@ -345,9 +349,9 @@ void loop(){
       delta_x = str_delta_x.toInt();
       delta_y = str_delta_y.toInt();
       
-      // Serial.print(" ESP: delta_x: ");
+      // Serial.print("ESP: delta_x: ");
       // Serial.println(delta_x);
-      // Serial.print(" ESP: delta_y: ");
+      // Serial.print("ESP: delta_y: ");
       // Serial.println(delta_y);
 
       if( delta_x == 320 && delta_y == 240){                     // THERE ARE NO OBJECT VISIBLE
@@ -406,7 +410,7 @@ void loop(){
           
           move_1_stop_2_stop();
           
-          Serial.print(" ESP: Cc ");
+          Serial.print("ESP: Cc ");
           container_centralized = 1;
         }
       }
@@ -431,7 +435,7 @@ void loop(){
     //////////////////////////// PICKING UP CONTAINER STATE ///////////////////////////
     ///////////////////////////////////////////////////////////////////////////////////
 
-    Serial.print(" ESP: Picking up container... ");
+    Serial.print("ESP: Picking up container...");
     lift_load();
     delay(ELECTROMAGNET_DOWN_TIME);
     
@@ -439,12 +443,12 @@ void loop(){
     /////////////////// LOADING CONTAINER TO THE AUTONOMOUS CART STATE ////////////////
     ///////////////////////////////////////////////////////////////////////////////////
 
-    Serial.print(" ESP: Elapsed time x: ");
+    Serial.print("ESP: Elapsed time x: ");
     Serial.println(elapsed_time_x);
-    Serial.print(" ESP: Elapsed time y: ");
+    Serial.print("ESP: Elapsed time y: ");
     Serial.println(elapsed_time_y);
     
-    Serial.println(" ESP: Transporting container to the cart... ");
+    Serial.println("ESP: Transporting container to the cart...");
     
     if(direction_go_back == 1){     // 1 == LEFT
       if(elapsed_time_x <= elapsed_time_y + TIME_BRIDGE_CENTER_TO_CART){
@@ -481,27 +485,27 @@ void loop(){
 
     move_1_stop_2_stop();
     
-    Serial.println(" ESP: Container centered above the cart ");
+    Serial.println("ESP: Container centered above the cart");
     
     ///////////////////////////////////////////////////////////////////////////////////
     ///////////// PLACING THE CONTAINER ON THE AUTONOMOUS CART STATE //////////////////
     ///////////////////////////////////////////////////////////////////////////////////
     
-    Serial.println(" ESP: Placing container on the cart... ");
+    Serial.println("ESP: Placing container on the cart...");
     lower_load();
-    Serial.println(" ESP: Container placed on the cart ");
+    Serial.println("ESP: Container placed on the cart");
     
     ///////////////////////////////////////////////////////////////////////////////////
     //////////// MOVING THE BRIDGE BACK TO THE CENTRAL POSITION STATE /////////////////
     ///////////////////////////////////////////////////////////////////////////////////
     
-    Serial.println(" ESP: Moving the car back to the central position ");
+    Serial.println("ESP: Moving the car back to the central position");
 
     move_1_stop_2_forward();
     delay(TIME_BRIDGE_CENTER_TO_CART);
     move_1_stop_2_stop();
 
-    Serial.print(" ESP: end ");
+    Serial.print("ESP: end");
 
     // DELAY TO ALLOW THE BACKEND TO RECEIVE THE COMMAND INDICATING THE CYCLE IS COMPLETE
     delay(2000);
