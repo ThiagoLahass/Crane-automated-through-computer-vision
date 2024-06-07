@@ -62,11 +62,11 @@ V_MIN_GREEN = 75
 V_MAX_GREEN = 117
 
 # initial min and max HSV filter to BLUE
-H_MIN_BLUE = 79
+H_MIN_BLUE = 98
 H_MAX_BLUE = 121
-S_MIN_BLUE = 55
-S_MAX_BLUE = 139
-V_MIN_BLUE = 250
+S_MIN_BLUE = 105
+S_MAX_BLUE = 179
+V_MIN_BLUE = 164
 V_MAX_BLUE = 255
 
 # initial min and max HSV filter to YELLOW
@@ -296,8 +296,8 @@ def main():
 
     while(not SETUP):
         try:
-            #Serial port(windows-->COM), baud rate, timeout msg
-            port = serial.Serial(PORT_NAME, 9600, timeout=1)
+            #Serial port(windows-->COM), baud rate, timeout limit
+            port = serial.Serial(PORT_NAME, 115200, timeout=0)
         except:
             if(time.time() - prev > 2): # Don't spam with msg
                 print('No serial detected, please plug your uController')

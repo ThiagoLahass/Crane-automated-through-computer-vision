@@ -148,7 +148,7 @@ void IRAM_ATTR lim_max_y_interrupt();
 ///////////////////////////////////////////////////////////////////////////////////
 
 void setup(){
-  Serial.begin(9600);
+  Serial.begin(115200);
   servo.attach(SERVO_PIN);
   
   pinMode(EN_PIN, OUTPUT);
@@ -581,8 +581,10 @@ void move_to_initial_position(){
     // AND WE EXIT THIS LOOP
     if(initial_position_x_reached && initial_position_y_reached){
     // if(lim_x_min == 1){
-      move_1_stop_2_stop();
       Serial.println("ESP: Initial position reached");
+      move_1_forward_2_forward();
+      delay(200);
+      move_1_stop_2_stop();
       lim_x_min = 0;
       lim_x_max = 0;
       lim_y_min = 0;
@@ -618,7 +620,7 @@ void move_to_central_position(){
   move_1_forward_2_forward();
   delay(1800);
   move_1_stop_2_forward();
-  delay(3000);
+  delay(3600);
   move_1_stop_2_stop();
   
   Serial.println("ESP: Central position reached!");
