@@ -12,18 +12,21 @@ Servo servo;
 // SETUP ELECTROMAGNET
 #define ELECTROMAGNET_PIN              15
 
+// SETUP INFRARED
+#define INFRARED_PIN                   25
+
 // OTHER SETUP VARIABLES
-#define ELECTROMAGNET_DOWN_TIME        3000
+#define ELECTROMAGNET_DOWN_TIME        3500
 #define CONTAINER_POSITION_ERROR_RANGE 20
-#define TIME_BRIDGE_CENTER_TO_CART     5000
+#define TIME_BRIDGE_CENTER_TO_CART     3300
 
 // SETUP MOTORS
-#define EN_PIN                0
+#define EN_PIN                2
 #define IN1_PIN               5
 #define IN2_PIN               17
 #define IN3_PIN               23
 #define IN4_PIN               22
-#define MOTOR_MOV_SPEED_PIN   25
+#define MOTOR_MOV_SPEED_PIN   4
 
 // LIMIT SWITCH SENSORS
 #define LIM_X_MIN_PIN  12
@@ -39,6 +42,8 @@ int lim_x_max = 0;
 int lim_y_min = 0;
 int lim_y_max = 0;
 int end_of_course = 0;
+
+int infrared_value = 0;
 
 ///////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////// FUNCTION HEADERS ///////////////////////////////////
@@ -124,6 +129,13 @@ void lift_load();
 void lower_load();
 
 /**
+ * @brief Sets up the servo motor by rotating it counterclockwise until a certain condition is met, then clockwise for a fixed duration, and finally stops it.
+ * 
+ * This function operates the servo motor based on the readings from an infrared sensor. The servo motor rotates counterclockwise initially, stops when the infrared sensor detects a value above zero for three consecutive readings, then rotates clockwise for 5 seconds, and finally stops.
+ */
+void setup_servo();
+
+/**
  * @brief Interrupt function for X minimum limit switch.
  */
 void IRAM_ATTR lim_min_x_interrupt();
@@ -161,6 +173,8 @@ void setup(){
   pinMode(MOTOR_MOV_SPEED_PIN, INPUT);
   
   pinMode(ELECTROMAGNET_PIN, OUTPUT);
+
+  pinMode(INFRARED_PIN, INPUT);
   
   // SET LIMIT SWITCH SENSORS AS INTERRUPT PINS
   pinMode(LIM_X_MIN_PIN, INPUT);
@@ -177,18 +191,32 @@ void setup(){
   // SETUP STATE
   digitalWrite(ELECTROMAGNET_PIN, HIGH);           // THE LOGIC IS INVERSE, "HIGH" TURNS OFF THE ELETROMAGNETIC
 
+  // ADJUST SERVO INITIAL POSITION
+  //Serial.print("ESP: Setuping servo");
+  setup_servo();
+
   // MOVE THE CAR TO THE INITIAL POSITION (0, 0)
   // THEN MOVE TO THE CENTER OF THE BRIDGE TO HAVE A HOLISCT VIEW OF THE CONTAINERS
   move_to_central_position();
+  delay(500);
+  Serial.print("ESP: Cpr"); // Central position reached!
+
   delay(1000);
-  Serial.print(" ESP: Cpr "); // Central position reached!
-  delay(4000);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////// MAIN LOOP ///////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////
 void loop(){
+
+  // RESET CRANE TRANSLATION VARIABLES
+  delta_x = 0;
+  delta_y = 0;
+  lim_x_min = 0;
+  lim_x_max = 0;
+  lim_y_min = 0;
+  lim_y_max = 0;
+  end_of_course = 0;
   
   ///////////////////////////////////////////////////////////////////////////////////
   //////////////////////////////// INITIAL STATE ////////////////////////////////////
@@ -281,19 +309,6 @@ void loop(){
       }
       
       if(direction_go_back == 1){     // 1 == LEFT
-        move_1_backward_2_backward();
-        if(elapsed_time_x <= elapsed_time_y){
-          delay(elapsed_time_x);
-          move_1_stop_2_backward();
-          delay(elapsed_time_y - elapsed_time_x);
-        }
-        else{
-          delay(elapsed_time_y);
-          move_1_backward_2_stop();
-          delay(elapsed_time_x - elapsed_time_y);
-        }
-      }
-      else{                           // 2 == RIGHT
         move_1_forward_2_backward();
         if(elapsed_time_x <= elapsed_time_y){
           delay(elapsed_time_x);
@@ -303,6 +318,19 @@ void loop(){
         else{
           delay(elapsed_time_y);
           move_1_forward_2_stop();
+          delay(elapsed_time_x - elapsed_time_y);
+        }
+      }
+      else{                           // 2 == RIGHT
+        move_1_backward_2_backward();
+        if(elapsed_time_x <= elapsed_time_y){
+          delay(elapsed_time_x);
+          move_1_stop_2_backward();
+          delay(elapsed_time_y - elapsed_time_x);
+        }
+        else{
+          delay(elapsed_time_y);
+          move_1_backward_2_stop();
           delay(elapsed_time_x - elapsed_time_y);
         }
       }
@@ -354,11 +382,11 @@ void loop(){
       // Serial.print("ESP: delta_y: ");
       // Serial.println(delta_y);
 
-      if( delta_x == 320 && delta_y == 240){                     // THERE ARE NO OBJECT VISIBLE
+      if( delta_x == 320 && delta_y == 240){                     // IN THIS CASE, THERE ARE NO OBJECT VISIBLE ON THE CAMERA
         move_1_stop_2_stop();
       }
-      else if(delta_x > CONTAINER_POSITION_ERROR_RANGE){         // CAMERA IS TO THE RIGHT OF THE CONTAINER CENTER
-        direction_go_back = 1;                                   // TO GO BACK TO THE CENTER POSITION, WE NEED TO GO TO LEFT AFTER GET THE CONTAINER
+      else if(delta_x > CONTAINER_POSITION_ERROR_RANGE){         // CAMERA IS TO THE LEFT OF THE CONTAINER CENTER
+        direction_go_back = 1;                                   // TO GO BACK TO THE CENTER POSITION, WE NEED TO GO TO RIGHT AFTER GET THE CONTAINER
 
         if(delta_y > CONTAINER_POSITION_ERROR_RANGE){            // CAMERA IS BELOW THE CONTAINER CENTER
           move_1_backward_2_forward();
@@ -374,8 +402,8 @@ void loop(){
           move_1_backward_2_stop();
         }
       }
-      else if(delta_x < -CONTAINER_POSITION_ERROR_RANGE){        // CAMERA IS TO THE LEFT OF THE CONTAINER CENTER
-        direction_go_back = 2;                                   // TO GO BACK TO THE CENTER POSITION, WE NEED TO GO TO RIGHT AFTER GET THE CONTAINER
+      else if(delta_x < -CONTAINER_POSITION_ERROR_RANGE){        // CAMERA IS TO THE RIGHT OF THE CONTAINER CENTER
+        direction_go_back = 2;                                   // TO GO BACK TO THE CENTER POSITION, WE NEED TO GO TO LEFT AFTER GET THE CONTAINER
         
         if(delta_y > CONTAINER_POSITION_ERROR_RANGE){            // CAMERA IS BELOW THE CONTAINER CENTER
           move_1_forward_2_forward();
@@ -437,7 +465,7 @@ void loop(){
 
     Serial.print("ESP: Picking up container...");
     lift_load();
-    delay(ELECTROMAGNET_DOWN_TIME);
+    delay(1000);
     
     ///////////////////////////////////////////////////////////////////////////////////
     /////////////////// LOADING CONTAINER TO THE AUTONOMOUS CART STATE ////////////////
@@ -450,37 +478,49 @@ void loop(){
     
     Serial.println("ESP: Transporting container to the cart...");
     
+    elapsed_time_x -= 1000;
+    elapsed_time_y -= 3000;
+
     if(direction_go_back == 1){     // 1 == LEFT
       if(elapsed_time_x <= elapsed_time_y + TIME_BRIDGE_CENTER_TO_CART){
-        move_1_backward_2_backward();
+        move_1_forward_2_backward();
         delay(elapsed_time_x);
 
-        move_1_stop_2_backward();
-        delay(elapsed_time_y + TIME_BRIDGE_CENTER_TO_CART - elapsed_time_x);
+        while(!lim_y_min){
+          move_1_stop_2_backward();
+        }
+        lim_y_min = 0;
+        // move_1_stop_2_backward();
+        // delay(elapsed_time_y + TIME_BRIDGE_CENTER_TO_CART - elapsed_time_x);
       }
-      else{
-        move_1_backward_2_backward();
-        delay(elapsed_time_y + TIME_BRIDGE_CENTER_TO_CART);
+      // else{
+      //   move_1_forward_2_backward();
+      //   delay(elapsed_time_y + TIME_BRIDGE_CENTER_TO_CART);
         
-        move_1_backward_2_stop();
-        delay(elapsed_time_x - (elapsed_time_y + TIME_BRIDGE_CENTER_TO_CART));
-      }
+      //   move_1_forward_2_stop();
+      //   delay(elapsed_time_x - (elapsed_time_y + TIME_BRIDGE_CENTER_TO_CART));
+      // }
     }
     else{                           // 2 == RIGHT
       if(elapsed_time_x <= elapsed_time_y + TIME_BRIDGE_CENTER_TO_CART){
-        move_1_forward_2_backward();
+        move_1_backward_2_backward();
         delay(elapsed_time_x);
 
-        move_1_stop_2_backward();
-        delay(elapsed_time_y + TIME_BRIDGE_CENTER_TO_CART - elapsed_time_x);
+        while(!lim_y_min){
+          move_1_stop_2_backward();
+        }
+        lim_y_min = 0;
+
+        // move_1_stop_2_backward();
+        // delay(elapsed_time_y + TIME_BRIDGE_CENTER_TO_CART - elapsed_time_x);
       }
-      else{
-        move_1_forward_2_backward();
-        delay(elapsed_time_y + TIME_BRIDGE_CENTER_TO_CART);
+      // else{
+      //   move_1_backward_2_backward();
+      //   delay(elapsed_time_y + TIME_BRIDGE_CENTER_TO_CART);
         
-        move_1_forward_2_stop();
-        delay(elapsed_time_x - (elapsed_time_y + TIME_BRIDGE_CENTER_TO_CART));
-      }
+      //   move_1_backward_2_stop();
+      //   delay(elapsed_time_x - (elapsed_time_y + TIME_BRIDGE_CENTER_TO_CART));
+      // }
     }
 
     move_1_stop_2_stop();
@@ -584,10 +624,9 @@ void move_to_initial_position(){
     // BOTH MOTORS MUST BE DEACTIVATED
     // AND WE EXIT THIS LOOP
     if(initial_position_x_reached && initial_position_y_reached){
-    // if(lim_x_min == 1){
       Serial.println("ESP: Initial position reached");
-      move_1_forward_2_forward();
-      delay(200);
+      // move_1_forward_2_forward();
+      // delay(200);
       move_1_stop_2_stop();
       lim_x_min = 0;
       lim_x_max = 0;
@@ -615,28 +654,53 @@ void move_to_initial_position(){
 void move_to_central_position(){
   move_to_initial_position();
 
-  delay(100);
-  
+  move_1_forward_2_forward();
+  lim_x_min = 0;
+  lim_x_max = 0;
+  lim_y_min = 0;
+  lim_y_max = 0;
+
   Serial.println("ESP: Moving the car to the central position...");
 
   speed();
 
-  move_1_forward_2_forward();
   delay(1800);
   move_1_stop_2_forward();
-  delay(3600);
+
+  delay(1500);
   move_1_stop_2_stop();
   
   Serial.println("ESP: Central position reached!");
 }
 
 void lift_load(){
-  servo.write(SERVO_STOPPED_VALUE - SERVO_SPEED); // clockwise
-  delay(ELECTROMAGNET_DOWN_TIME);
+  servo.write(SERVO_STOPPED_VALUE - SERVO_SPEED); // counterclockwise
+
+  // while loop to lower the electromagnet while it is not on top of the container
+  int stop_flag = 0;
+  int count = 0;
+  while( !stop_flag ){
+    infrared_value = analogRead(INFRARED_PIN);    // Read the value of infrared sensor
+    // Serial.println(infrared_value);
+    if (infrared_value > 0){
+      count++;
+    }
+    else{
+      count = 0;
+    }
+    if( count >= 3){
+      stop_flag = 1;
+    }
+
+    delay(50);
+  }
+  delay(200);
+
   servo.write(SERVO_STOPPED_VALUE);
-  digitalWrite(ELECTROMAGNET_PIN, LOW);           // THE LOGIC IS INVERSE, "LOW" TURNS ON THE ELETROMAGNETIC
-  delay(1000);
-  servo.write(SERVO_STOPPED_VALUE + SERVO_SPEED); // counterclockwise
+  delay(500);
+  digitalWrite(ELECTROMAGNET_PIN, LOW);           // THE LOGIC IS INVERSE, "LOW" TURNS *ON* THE ELETROMAGNETIC
+  delay(500);
+  servo.write(SERVO_STOPPED_VALUE + SERVO_SPEED); // clockwise
   delay(ELECTROMAGNET_DOWN_TIME);
   servo.write(SERVO_STOPPED_VALUE);
 }
@@ -645,11 +709,41 @@ void lower_load(){
   servo.write(SERVO_STOPPED_VALUE - SERVO_SPEED); // clockwise
   delay(ELECTROMAGNET_DOWN_TIME);
   servo.write(SERVO_STOPPED_VALUE);
-  digitalWrite(ELECTROMAGNET_PIN, HIGH);           // THE LOGIC IS INVERSE, "HIGH" TURNS OFF THE ELETROMAGNETIC
-  delay(1000);
+  delay(500);
+  digitalWrite(ELECTROMAGNET_PIN, HIGH);           // THE LOGIC IS INVERSE, "HIGH" TURNS *OFF* THE ELETROMAGNETIC
+  delay(500);
   servo.write(SERVO_STOPPED_VALUE + SERVO_SPEED); // counterclockwise
   delay(ELECTROMAGNET_DOWN_TIME);
   servo.write(SERVO_STOPPED_VALUE);
+}
+
+void setup_servo(){
+  servo.write(SERVO_STOPPED_VALUE - SERVO_SPEED); // counterclockwise
+  int stop_flag = 0;
+  int count = 0;
+  while( !stop_flag ){
+    infrared_value = analogRead(INFRARED_PIN);  // Lê o valor do sensor
+    // Serial.println(infrared_value);
+    if (infrared_value > 0){
+      count++;
+    }
+    else{
+      count = 0;
+    }
+    if( count >= 3){
+      stop_flag = 1;
+    }
+
+    delay(50);
+  }
+
+  //Serial.println("ESP: SERVO LIM MIX reached");
+
+  servo.write(SERVO_STOPPED_VALUE + SERVO_SPEED); // clockwise
+  delay(5000);
+
+  servo.write(SERVO_STOPPED_VALUE);
+  //Serial.println("ESP: Servo Setup Finished");
 }
 
 // INTERRUPT FUNCTION DEFINITIONS

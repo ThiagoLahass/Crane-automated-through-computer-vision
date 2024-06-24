@@ -62,11 +62,11 @@ V_MIN_GREEN = 75
 V_MAX_GREEN = 117
 
 # initial min and max HSV filter to BLUE
-H_MIN_BLUE = 98
-H_MAX_BLUE = 121
-S_MIN_BLUE = 105
-S_MAX_BLUE = 179
-V_MIN_BLUE = 164
+H_MIN_BLUE = 88
+H_MAX_BLUE = 110
+S_MIN_BLUE = 144
+S_MAX_BLUE = 255
+V_MIN_BLUE = 179
 V_MAX_BLUE = 255
 
 # initial min and max HSV filter to YELLOW
@@ -108,7 +108,7 @@ FRAME_HEIGHT    = 480
 MAX_NUM_OBJECTS = 5
 
 # minimum and maximum object area
-MIN_OBJECT_AREA = 20 * 20                                   # ADJUST WHEN DOING CONTAINER DETECTION ON CRANE
+MIN_OBJECT_AREA = 40 * 40                                   # ADJUST WHEN DOING CONTAINER DETECTION ON CRANE
 MAX_OBJECT_AREA = int(FRAME_HEIGHT * FRAME_WIDTH / 1.5)
 
 def clean_noise_morph_ops(img):
@@ -343,8 +343,9 @@ def main():
     while(1):
         # SERIAL COMUNICATION - READ
         string = read_ser(port, MAX_BUFF_LEN)
+        string = string.strip()
         if(len(string)):
-            print(f"{string}")
+            print(f"'{string}'")
             if (string == "ESP: Cpr"):       # Received when 'Central position reached'
                 print("BACKEND: Crane at the central position, now we can start!\n")
                 break
