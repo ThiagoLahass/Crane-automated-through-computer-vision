@@ -16,7 +16,8 @@ Servo servo;
 #define INFRARED_PIN                   25
 
 // OTHER SETUP VARIABLES
-#define ELECTROMAGNET_DOWN_TIME        3500
+#define ELECTROMAGNET_DOWN_TIME        2500
+#define ELECTROMAGNET_UP_TIME          5000
 #define CONTAINER_POSITION_ERROR_RANGE 20
 #define TIME_BRIDGE_CENTER_TO_CART     3300
 
@@ -701,7 +702,7 @@ void lift_load(){
   digitalWrite(ELECTROMAGNET_PIN, LOW);           // THE LOGIC IS INVERSE, "LOW" TURNS *ON* THE ELETROMAGNETIC
   delay(500);
   servo.write(SERVO_STOPPED_VALUE + SERVO_SPEED); // clockwise
-  delay(ELECTROMAGNET_DOWN_TIME);
+  delay(ELECTROMAGNET_UP_TIME);
   servo.write(SERVO_STOPPED_VALUE);
 }
 
@@ -713,7 +714,7 @@ void lower_load(){
   digitalWrite(ELECTROMAGNET_PIN, HIGH);           // THE LOGIC IS INVERSE, "HIGH" TURNS *OFF* THE ELETROMAGNETIC
   delay(500);
   servo.write(SERVO_STOPPED_VALUE + SERVO_SPEED); // counterclockwise
-  delay(ELECTROMAGNET_DOWN_TIME);
+  delay(ELECTROMAGNET_UP_TIME);
   servo.write(SERVO_STOPPED_VALUE);
 }
 

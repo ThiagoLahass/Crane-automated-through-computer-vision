@@ -62,11 +62,11 @@ V_MIN_GREEN = 75
 V_MAX_GREEN = 117
 
 # initial min and max HSV filter to BLUE
-H_MIN_BLUE = 88
-H_MAX_BLUE = 110
-S_MIN_BLUE = 144
+H_MIN_BLUE = 92
+H_MAX_BLUE = 143
+S_MIN_BLUE = 131
 S_MAX_BLUE = 255
-V_MIN_BLUE = 179
+V_MIN_BLUE = 178
 V_MAX_BLUE = 255
 
 # initial min and max HSV filter to YELLOW
@@ -416,7 +416,7 @@ def main():
                             draw_crosshair(x, y, color, img_original)
                         
                         # calculates the difference between the container's current position and the center of the image
-                        delta_x = int (X_CENTER - x)
+                        delta_x = int (X_CENTER - x + 80)
                         delta_y = int (Y_CENTER - y)
                         # print(f'BACKEND: Delta x = {delta_x}, Delta y = {delta_y}')
 
