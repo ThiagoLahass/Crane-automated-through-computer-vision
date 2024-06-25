@@ -11,6 +11,10 @@ Vídeo da ponte em funcionamento
 
 O Sistema de Automação Logística com Visão Computacional é uma solução inovadora que combina robótica, visão computacional e comunicação serial para otimizar a logística em um ambiente automatizado. Utilizando uma ponte rolante controlada por um ESP32, o sistema é capaz de identificar, localizar e mover contêineres de diferentes cores de forma precisa e eficiente.
 
+O video do pitch inicial do projeto pode ser encontrado [aqui](https://youtu.be/iw18S4EYCus?si=bXUdSKVfdXWQbk5L).
+
+O video do projeto final em funcionamento pode ser encontrado [aqui](/media/under_development.gif).
+
 ## Componentes do Sistema
 
 ### Hardware:
@@ -18,13 +22,16 @@ O Sistema de Automação Logística com Visão Computacional é uma solução in
    - **Motores de Translação:** Permitem o movimento longitudinal (frente/tras) e movimento transversal (esquerda/direita) da ponte rolante.
    - **Servo Motor 360° Contínuo:** Utilizado para elevar e baixar a carga.
    - **Eletroímã:** Para pegar e soltar os contêineres.
+   - **Relé:** Utilizado para ativar e desativar o eletroímã.
    - **Sensores de Fim de Curso:** 4 sensores para limitar a translação da ponte.
+   - **Sensor Reflexivo Infravermelho TCRT5000:** Utilizado para verificar se o eletroímã já está posicionado em cima do contêiner ou já chegou ao chão.
+   - **Interruptores:** Para acionar e desativar componentes como a chave geral, ponte H, luzes, entre outros.
    - **Câmera:** Integrada à ponte rolante para capturar imagens dos contêineres.
    - **Carrinho Seguidor de Linha:** Transporta os contêineres da área de carga para a área de descarga e depois volta à área de carga.
 
-#### Você pode visualizar o *esquemático do harware da ponte rolante* em PDF [aqui](https://drive.google.com/file/d/1xqxUE0G9CciGNIpf4n1jY_mwfkZlnW70/view?usp=sharing).
+#### Você pode visualizar o *esquemático do harware da ponte rolante* em [PDF](https://drive.google.com/file/d/1xqxUE0G9CciGNIpf4n1jY_mwfkZlnW70/view?usp=sharing).
 
-#### Além disso, também pode visualizar o *esquemático do harware do carrinho autônomo* em PDF [aqui](https://drive.google.com/file/d/1A2B3C4D5E6F7G8H9I0/view?usp=sharing).
+#### Além disso, também pode visualizar o *esquemático do harware do carrinho autônomo* em [PDF](/media/under_development.gif).
 
 ### Software:
 - **OpenCV:** Biblioteca de visão computacional para processamento de imagens. Você pode acessar a documentação da biblioteca clicando [aqui](https://docs.opencv.org/4.x/d1/dfb/intro.html).
@@ -39,6 +46,8 @@ O sistema captura imagens através da câmera integrada na ponte rolante e utili
 - **crane.ino:** Código em C++ embarcado no ESP32, responsável pelo controle de todos os componentes da ponte rolante.
 - **thresholds-identifier.py:** Utilizado para identificar bons valores no espaço de cores HSV para identificar cada uma das cores antes da execução do código principal.
 - **containers_identification.py:** Código principal que executa simultaneamente com o microcontrolador ESP32, processando a imagem e enviando as informações via comunicação serial.
+- **my_serial.py:** Implementação das funções usadas para realizar a comunicação serial.
+- **utils.py:** Funções auxilizares no funcionamento do projeto, desde, por exemplo, a identificação dos conteineres através do openCV, até a seleção de cores de e quantidades.
 
 ## Instalação e Configuração
 
