@@ -29,7 +29,7 @@ O video do projeto final em funcionamento pode ser encontrado [aqui](/media/unde
    - **Câmera:** Integrada à ponte rolante para capturar imagens dos contêineres.
    - **Carrinho Seguidor de Linha:** Transporta os contêineres da área de carga para a área de descarga e depois volta à área de carga.
 
-#### Você pode visualizar o *esquemático do harware da ponte rolante* em [PDF](https://drive.google.com/file/d/1xqxUE0G9CciGNIpf4n1jY_mwfkZlnW70/view?usp=sharing).
+#### Você pode visualizar o *esquemático do harware da ponte rolante* em [PDF](https://drive.google.com/file/d/1jckovudLcgMCwXbqhqCw3JstYeJ34mU-/view?usp=sharing).
 
 #### Além disso, também pode visualizar o *esquemático do harware do carrinho autônomo* em [PDF](/media/under_development.gif).
 
