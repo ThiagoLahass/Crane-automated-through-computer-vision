@@ -1,7 +1,7 @@
 # Sistema de Automação Logística com Visão Computacional
 
 <p align="center">
-  <img src="img\logo.png" />
+  <img src="media/logo.png" />
 </p>
 
 ## Descrição do Projeto
@@ -66,19 +66,19 @@ O sistema captura imagens através da câmera integrada na ponte rolante e utili
 1. **Identificação de Cores:**
    Execute `thresholds-identifier.py` para ajustar os valores HSV das cores.
     <p align="center">
-      <img src="img\thresholds-identifier.jpeg" />
+      <img src="media/thresholds-identifier.jpeg" />
     </p>
 
 2. **Interface de Seleção:**
    Utilize a interface para selecionar a quantidade e tipo de containers.
     <p align="center">
-      <img src="img\interface.png" />
+      <img src="media/interface.png" />
     </p>
 
 3. **Operação Automática:**
    Após a seleção, o sistema operará automaticamente para mover e posicionar os containers conforme especificado.
     <p align="center">
-      <img src="img\ponte-rolante.jpeg" />
+      <img src="media/ponte-rolante.jpeg" />
     </p>
 
 ## Contribuição
@@ -100,5 +100,5 @@ O sistema captura imagens através da câmera integrada na ponte rolante e utili
 Agradecemos a todos os contribuidores e apoiadores deste projeto.
 
 <p align="center">
-  <img src="img\logo.png" />
+  <img src="media/logo.png" />
 </p>
