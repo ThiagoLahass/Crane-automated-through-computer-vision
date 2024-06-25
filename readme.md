@@ -1,7 +1,10 @@
 # Sistema de Automação Logística com Visão Computacional
 
+<!--
+Vídeo da ponte em funcionamento
+-->
 <p align="center">
-  <img src="media/logo.png" />
+  <img src="media/working.gif" />
 </p>
 
 ## Descrição do Projeto
@@ -98,7 +101,3 @@ O sistema captura imagens através da câmera integrada na ponte rolante e utili
 ## Agradecimentos
 
 Agradecemos a todos os contribuidores e apoiadores deste projeto.
-
-<p align="center">
-  <img src="media/logo.png" />
-</p>
