@@ -2,7 +2,16 @@ import cv2
 import numpy as np
 import time
 import my_serial
-from utils import FRAME_WIDTH, FRAME_HEIGHT, my_colors_thresholds, COLORS_NAME, clean_noise_morph_ops, select_colors_and_quantities, get_center_of_nearest_container, draw_crosshair
+from utils import (
+    FRAME_WIDTH,
+    FRAME_HEIGHT,
+    COLORS_NAME,
+    my_colors_thresholds,
+    clean_noise_morph_ops,
+    select_colors_and_quantities,
+    get_center_of_nearest_container,
+    draw_crosshair
+)
 
 def main():
     """
