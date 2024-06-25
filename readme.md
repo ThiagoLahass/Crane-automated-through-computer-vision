@@ -22,9 +22,13 @@ O Sistema de Automação Logística com Visão Computacional é uma solução in
    - **Câmera:** Integrada à ponte rolante para capturar imagens dos contêineres.
    - **Carrinho Seguidor de Linha:** Transporta os contêineres da área de carga para a área de descarga e depois volta à área de carga.
 
+#### Você pode visualizar o *esquemático do harware da ponte rolante* em PDF [aqui](https://drive.google.com/file/d/1xqxUE0G9CciGNIpf4n1jY_mwfkZlnW70/view?usp=sharing).
+
+#### Além disso, também pode visualizar o *esquemático do harware do carrinho autônomo* em PDF [aqui](https://drive.google.com/file/d/1A2B3C4D5E6F7G8H9I0/view?usp=sharing).
+
 ### Software:
-- **OpenCV:** Biblioteca de visão computacional para processamento de imagens.
-- **Comunicação Serial:** Interface de comunicação entre o ESP32 e o sistema de visão computacional.
+- **OpenCV:** Biblioteca de visão computacional para processamento de imagens. Você pode acessar a documentação da biblioteca clicando [aqui](https://docs.opencv.org/4.x/d1/dfb/intro.html).
+- **Comunicação Serial:** Interface de comunicação entre o ESP32 e o sistema de visão computacional. Você pode acessar a documentação da biblioteca clicando [aqui](https://pyserial.readthedocs.io/en/latest/pyserial.html).
 
 ## Funcionamento
 
@@ -100,4 +104,5 @@ O sistema captura imagens através da câmera integrada na ponte rolante e utili
 
 ## Agradecimentos
 
-Agradecemos a todos os contribuidores e apoiadores deste projeto.
+Agradecemos a todos os contribuidores e apoiadores deste projeto, principalmente ao Prof. Dr. Rodolfo da Silva Villaça e Prof. Dr. Ricardo Carminati de
+Mello.
