@@ -1,7 +1,6 @@
 import cv2
 import numpy as np
 
-#==================== OBJECT IDENTIFIER AND TRACKING VARIABLES AND FUNCTIONS ====================
 # initial min and max HSV filter values.
 # these will be changed using trackbars
 H_MIN = 0

@@ -738,6 +738,7 @@ void setup_servo(){
     delay(50);
   }
 
+  delay(500);
   //Serial.println("ESP: SERVO LIM MIX reached");
 
   servo.write(SERVO_STOPPED_VALUE + SERVO_SPEED); // clockwise
