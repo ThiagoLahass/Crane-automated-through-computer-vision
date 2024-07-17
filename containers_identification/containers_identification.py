@@ -71,6 +71,7 @@ def main():
         # input of the container(s) information
         colors, quantities = select_colors_and_quantities()
         print("BACKEND: Selected colors: ", colors)
+        
         print("BACKEND: Selected quantities: ", quantities)
 
         # for each set of containers of a color
@@ -126,7 +127,7 @@ def main():
                         
                         # calculates the difference between the container's current position and the center of the image
                         #FIXME: ADICIONAR A DIFERENÇA ENTRE O CENTRO DO ELETROÍMÃ PARA A CÂMERA
-                        delta_x = int (X_CENTER - x + 80)
+                        delta_x = int (X_CENTER - x + 45)
                         delta_y = int (Y_CENTER - y)
 
                         # Padding with leading zeros to guarantee 4 digits (with sign)
