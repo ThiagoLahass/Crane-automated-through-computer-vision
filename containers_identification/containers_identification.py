@@ -2,6 +2,8 @@ import cv2
 import numpy as np
 import time
 import my_serial
+import customtkinter as ctk
+from interface import Interface
 from utils import (
     FRAME_WIDTH,
     FRAME_HEIGHT,
@@ -13,12 +15,14 @@ from utils import (
     draw_crosshair
 )
 
-def main():
+global port
+
+def main(container_info):
     """
     Main function to control the object detection and tracking process.
     """
-    PORT_NAME = 'COM7'
-    port = my_serial.setup_serial_comunication(PORT_NAME)
+    # PORT_NAME = 'COM7'
+    # port = my_serial.setup_serial_comunication(PORT_NAME)
 
     #==================== OBJECT POSITION/CAMERA VARIABLES SETUP ====================
     X_CENTER = FRAME_WIDTH  / 2
@@ -32,48 +36,51 @@ def main():
     track_objects = True
     use_morph_ops = True
     
-    # Read from webcam
-    capture = cv2.VideoCapture(0)
+    # # Read from webcam
+    # capture = cv2.VideoCapture(0)
 
-    # Opening the screens immediately so we don't have delays later
-    ret, img_original = capture.read()
-    img_HSV = cv2.cvtColor(img_original, cv2.COLOR_BGR2HSV)
-    img_mask = np.zeros((4, FRAME_HEIGHT, FRAME_WIDTH), dtype=np.uint8)
-    for i, thresholds in enumerate(my_colors_thresholds):
-        lower = np.array(thresholds[:3])
-        upper = np.array(thresholds[3:])
-        img_mask[i] = cv2.inRange(img_HSV, lower, upper)
-        if use_morph_ops:
-            img_mask[i] = clean_noise_morph_ops(img_mask[i])
-        cv2.imshow(COLORS_NAME[i], img_mask[i])
+    # # Opening the screens immediately so we don't have delays later
+    # ret, img_original = capture.read()
+    # img_HSV = cv2.cvtColor(img_original, cv2.COLOR_BGR2HSV)
+    # img_mask = np.zeros((4, FRAME_HEIGHT, FRAME_WIDTH), dtype=np.uint8)
+    # for i, thresholds in enumerate(my_colors_thresholds):
+    #     lower = np.array(thresholds[:3])
+    #     upper = np.array(thresholds[3:])
+    #     img_mask[i] = cv2.inRange(img_HSV, lower, upper)
+    #     if use_morph_ops:
+    #         img_mask[i] = clean_noise_morph_ops(img_mask[i])
+    #     cv2.imshow(COLORS_NAME[i], img_mask[i])
         
-    cv2.imshow("Image Original", img_original)
-    cv2.imshow("Image HSV", img_HSV)
+    # cv2.imshow("Image Original", img_original)
+    # cv2.imshow("Image HSV", img_HSV)
 
     #=================== END OBJECT POSITION VARIABLES SETUP =================
 
-    # WAITING THE CRANE BE AT THE CENTRAL POSITION (DEFAULT)
-    while(1):
-        string = my_serial.read_ser(port, my_serial.MAX_BUFF_LEN)
-        string = string.strip()
-        if(len(string)):
-            print(f"'{string}'")
-            if (string == "ESP: Cpr"):       # Received when 'Central position reached'
-                print("BACKEND: Crane at the central position, now we can start!\n")
-                break
-        time.sleep(0.1)
-
+    # # WAITING THE CRANE BE AT THE CENTRAL POSITION (DEFAULT)
+    # while(1):
+    #     string = my_serial.read_ser(port, my_serial.MAX_BUFF_LEN)
+    #     string = string.strip()
+    #     if(len(string)):
+    #         print(f"'{string}'")
+    #         if (string == "ESP: Cpr"):       # Received when 'Central position reached'
+    #             print("BACKEND: Crane at the central position, now we can start!\n")
+    #             break
+    #     time.sleep(0.1)
     first_loop_flag = False
 
     # FIRST WHILE LOOP - IT'S REPRESENT EVERY TIME AS THE COMAND TO SEARCH A CONTAINER IS SEND
     while( not first_loop_flag ):
         
         # input of the container(s) information
-        colors, quantities = select_colors_and_quantities()
+        colors = [color for color, quantity in container_info.items() if quantity > 0]
+        quantities = [quantity for color, quantity in container_info.items() if quantity > 0]
+        if len(colors) == 0:
+            interface.stop_progress()
+            interface.show_dialog("As quantidades dos contêineres não podem ser todas iguais a zero. Por favor, selecione ao menos um contêiner.", "warning")
+            return
         print("BACKEND: Selected colors: ", colors)
-        
         print("BACKEND: Selected quantities: ", quantities)
-
+  
         # for each set of containers of a color
         for index, color in enumerate(colors):
             # for each container
@@ -174,11 +181,50 @@ def main():
                     key = cv2.waitKey(1)
                     # Press ESC to exit
                     if key == 27:
-                        first_loop_flag = True
+                        first_loop_flag=True
+                        interface.stop_progress()
                         break
-
+        first_loop_flag = True
     capture.release()
     cv2.destroyAllWindows()
+    interface.stop_progress()
+    interface.show_dialog("Transporte finalizado.", "info")
+    return
 
 if __name__ == "__main__":
-    main()
+    PORT_NAME = 'COM7'
+    port = my_serial.setup_serial_comunication(PORT_NAME)
+
+    use_morph_ops = True
+    # Read from webcam
+    capture = cv2.VideoCapture(0)
+
+    # Opening the screens immediately so we don't have delays later
+    ret, img_original = capture.read()
+    img_HSV = cv2.cvtColor(img_original, cv2.COLOR_BGR2HSV)
+    img_mask = np.zeros((4, FRAME_HEIGHT, FRAME_WIDTH), dtype=np.uint8)
+    for i, thresholds in enumerate(my_colors_thresholds):
+        lower = np.array(thresholds[:3])
+        upper = np.array(thresholds[3:])
+        img_mask[i] = cv2.inRange(img_HSV, lower, upper)
+        if use_morph_ops:
+            img_mask[i] = clean_noise_morph_ops(img_mask[i])
+        cv2.imshow(COLORS_NAME[i], img_mask[i])
+        
+    cv2.imshow("Image Original", img_original)
+    cv2.imshow("Image HSV", img_HSV)
+
+    # WAITING THE CRANE BE AT THE CENTRAL POSITION (DEFAULT)
+    while(1):
+        string = my_serial.read_ser(port, my_serial.MAX_BUFF_LEN)
+        string = string.strip()
+        if(len(string)):
+            print(f"'{string}'")
+            if (string == "ESP: Cpr"):       # Received when 'Central position reached'
+                print("BACKEND: Crane at the central position, now we can start!\n")
+                break
+        time.sleep(0.1)
+
+    root = ctk.CTk()
+    interface = Interface(root, main)
+    root.mainloop()
