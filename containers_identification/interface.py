@@ -1,20 +1,26 @@
 import customtkinter as ctk
-import tkinter as tk
 from CTkSpinbox import CTkSpinbox
 from PIL import Image
-import threading
-import time
+from CTkMessagebox import CTkMessagebox
 
 class Interface:
     def __init__(self, root, update_callback):
         self.root = root
         self.update_callback = update_callback
 
+        width = 500
+        height = 550
+
+        screen_width = root.winfo_screenwidth()
+        screen_height = root.winfo_screenheight()
+        x = (screen_width // 2) - (width // 2)
+        y = (screen_height // 2) - (height // 2)
+
         # Inicializa a janela principal
         ctk.set_appearance_mode("System")
         ctk.set_default_color_theme("blue")
         self.root.title("Interface de Usuário")
-        self.root.geometry("500x550")
+        self.root.geometry(f"{width}x{height}+{x}+{y}")
         self.root.minsize(500, 550)
 
         self.font_size = 20
@@ -74,5 +80,6 @@ class Interface:
         self.progress_bar.pack_forget()
         self.confirm_button.configure(state="normal")
 
-    def show_dialog(self, message):
-        tk.messagebox.showinfo("Aviso", message, icon="warning")
+    def show_dialog(self, message, icon):
+        # tk.messagebox.showinfo("Aviso", message, icon="warning")
+        CTkMessagebox(title="Info", message=message, font=('Arial', 18), icon=icon)
