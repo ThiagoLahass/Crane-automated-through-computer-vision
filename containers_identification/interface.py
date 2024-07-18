@@ -4,7 +4,30 @@ from PIL import Image
 from CTkMessagebox import CTkMessagebox
 
 class Interface:
+    """
+    Interface class to create a GUI for a logistics automation system.
+
+    Attributes:
+        root (ctk.CTk): The main window of the interface.
+        update_callback (function): A callback function to update the container information.
+        font_size (int): The font size used in the interface.
+        font (tuple): The font type and size used in the interface.
+        square_size (int): The size of the color squares.
+        images (dict): A dictionary to store images of color squares.
+        spin_vars (dict): A dictionary to store spinbox variables.
+        flag (int): A flag to indicate the progress state.
+        confirm_button (ctk.CTkButton): A button to confirm the container selection.
+        progress_label (ctk.CTkLabel): A label to show progress.
+        progress_bar (ctk.CTkProgressBar): A progress bar to show progress.
+    """
     def __init__(self, root, update_callback):
+        """
+        Initializes the Interface class.
+
+        Args:
+            root (ctk.CTk): The main window of the interface.
+            update_callback (function): A callback function to update the container information.
+        """
         self.root = root
         self.update_callback = update_callback
 
@@ -68,10 +91,23 @@ class Interface:
         self.progress_bar.set(0)
 
     def create_color_square(self, color, size):
+        """
+        Creates a square image of a given color and size.
+
+        Args:
+            color (str): The color of the square.
+            size (int): The size of the square.
+
+        Returns:
+            ctk.CTkImage: The created color square image.
+        """
         image = Image.new("RGB", (size, size), color)
         return ctk.CTkImage(light_image=image, dark_image=image, size=(size, size))
 
     def confirm_selection(self):
+        """
+        Confirms the selection of container quantities and starts the progress bar.
+        """
         container_info = {color: spin_var.get() for color, spin_var in self.spin_vars.items()}
         self.flag = 1
         self.progress_label.pack(pady=20)
@@ -81,6 +117,9 @@ class Interface:
         self.update_callback(container_info)
 
     def stop_progress(self):
+        """
+        Stops the progress bar and resets the interface.
+        """
         self.flag = 0
         self.progress_label.pack_forget()
         self.progress_bar.stop()
@@ -88,5 +127,12 @@ class Interface:
         self.confirm_button.configure(state="normal")
 
     def show_dialog(self, message, icon):
+        """
+        Shows a dialog message box.
+
+        Args:
+            message (str): The message to display.
+            icon (str): The icon to display in the message box.
+        """
         # tk.messagebox.showinfo("Aviso", message, icon="warning")
         CTkMessagebox(title="Info", message=message, font=('Arial', 18), icon=icon)
