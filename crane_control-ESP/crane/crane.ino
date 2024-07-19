@@ -16,7 +16,7 @@ Servo servo;
 #define INFRARED_PIN                   25
 
 // OTHER SETUP VARIABLES
-#define ELECTROMAGNET_DOWN_TIME        2050
+#define ELECTROMAGNET_DOWN_TIME        2300
 #define ELECTROMAGNET_UP_TIME          7000
 #define CONTAINER_POSITION_ERROR_RANGE 20
 #define TIME_BRIDGE_CENTER_TO_CART     5000
@@ -464,6 +464,8 @@ void loop(){
     delay(10);
   }
 
+  container_centralized = 0;
+
 
   // ///////////////////////////////////////////////////////////////////////////////////
   // ///////////////////////// SELECTED CONTAINER SEARCH STATE /////////////////////////     SECOND OPTION
@@ -594,8 +596,8 @@ void loop(){
     
     Serial.println("ESP: Transporting container to the cart...");
     
-    elapsed_time_x -= 1000;
-    elapsed_time_y -= 3000;
+    // elapsed_time_x -= 1000;
+    // elapsed_time_y -= 3000;
 
     if(direction_go_back == 1){     // 1 == LEFT
       if(elapsed_time_x <= elapsed_time_y + TIME_BRIDGE_CENTER_TO_CART){

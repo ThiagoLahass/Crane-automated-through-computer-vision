@@ -133,9 +133,8 @@ def main(container_info):
                             draw_crosshair(x, y, color, img_original)
                         
                         # calculates the difference between the container's current position and the center of the image
-                        #FIXME: ADICIONAR A DIFERENÇA ENTRE O CENTRO DO ELETROÍMÃ PARA A CÂMERA
-                        delta_x = int (X_CENTER - x + 45)
-                        delta_y = int (Y_CENTER - y)
+                        delta_x = int (X_CENTER - x + 45)   # "45" IS THE DIFFERENCE BETWEEN THE CENTER OF THE ELECTROMAGNET TO THE CAMERA ON X AXIS
+                        delta_y = int (Y_CENTER - y)        # y axis is already aligned with the eletromagnetic
 
                         # Padding with leading zeros to guarantee 4 digits (with sign)
                         delta_x_str = str(delta_x).zfill(4)
