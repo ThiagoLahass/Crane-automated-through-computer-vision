@@ -380,7 +380,7 @@ void loop(){
       // Serial.print("ESP: delta_y: ");
       // Serial.println(delta_y);
 
-      if( delta_x == 320 && delta_y == 240){                     // IN THIS CASE, THERE ARE NO OBJECT VISIBLE ON THE CAMERA
+      if( delta_x == 365 && delta_y == 240){                     // IN THIS CASE, THERE ARE NO OBJECT VISIBLE ON THE CAMERA
         move_1_stop_2_stop();
       }
       else if(delta_x > CONTAINER_POSITION_ERROR_RANGE){         // CAMERA IS TO THE LEFT OF THE CONTAINER CENTER

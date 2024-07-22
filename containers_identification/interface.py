@@ -54,7 +54,7 @@ class Interface:
         self.spin_vars = {}
         self.flag = 0
 
-        options = [("vermelho", "#ff0000"), ("verde", "#00ff00"), ("azul", "#0000ff"), ("amarelo", "#ffff00")]
+        options = [("vermelho", "#ff0000"), ("verde", "#00ff00"), ("azul", "#0000ff")]
 
         title_label = ctk.CTkLabel(self.root, text="Sistema de Automação Logística", font=("arial bold", 25))
         title_label.pack(pady=10)
@@ -68,8 +68,6 @@ class Interface:
                 color_int = 1
             elif(text == 'azul'):
                 color_int = 2
-            elif(text == 'amarelo'):
-                color_int = 3
             self.images[color] = self.create_color_square(color, self.square_size)
             frame = ctk.CTkFrame(self.root)
             frame.pack(anchor='center', pady=5)
@@ -110,6 +108,8 @@ class Interface:
         """
         container_info = {color: spin_var.get() for color, spin_var in self.spin_vars.items()}
         self.flag = 1
+        # for spin_var in self.spin_vars.values():
+        #     spin_var.set(0)
         self.progress_label.pack(pady=20)
         self.progress_bar.pack(pady=20)
         self.progress_bar.start()
