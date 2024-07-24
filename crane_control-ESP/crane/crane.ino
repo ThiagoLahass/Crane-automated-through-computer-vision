@@ -280,10 +280,10 @@ void loop(){
   
   Serial.println("ESP: Receiving container position...");
   
-  unsigned long start_time_x = millis();   // Save the start time of x centralization
-  unsigned long start_time_y = millis();   // Save the start time of y centralization
-  unsigned long elapsed_time_x = 0;        // Variable to store the time taken for x centralization
-  unsigned long elapsed_time_y = 0;        // Variable to store the time taken for y centralization
+  unsigned long start_time_x = 0;           // Save the start time of x centralization
+  unsigned long start_time_y = 0;           // Save the start time of y centralization
+  unsigned long elapsed_time_x = 0;         // Variable to store the time taken for x centralization
+  unsigned long elapsed_time_y = 0;         // Variable to store the time taken for y centralization
   
   while(!container_centralized){
 
@@ -354,6 +354,7 @@ void loop(){
     }
       
     if(command_identified){
+
       // CHECK COMMAND
       // Serial.print("ESP: '");
       // Serial.print(str);
@@ -380,6 +381,11 @@ void loop(){
       // Serial.print("ESP: delta_y: ");
       // Serial.println(delta_y);
 
+      if(start_time_x == 0 && start_time_y == 0){
+        start_time_x = millis();
+        start_time_y = millis();
+      }
+
       if( delta_x == 365 && delta_y == 240){                     // IN THIS CASE, THERE ARE NO OBJECT VISIBLE ON THE CAMERA
         move_1_stop_2_stop();
         if(millis() - start_time_x > 5000){
@@ -392,7 +398,9 @@ void loop(){
         }
       }
       else if(delta_x > CONTAINER_POSITION_ERROR_RANGE){         // CAMERA IS TO THE LEFT OF THE CONTAINER CENTER
-        direction_go_back = 1;                                   // TO GO BACK TO THE CENTER POSITION, WE NEED TO GO TO RIGHT AFTER GET THE CONTAINER
+        if(direction_go_back == 0){
+          direction_go_back = 1;                                 // TO GO BACK TO THE CENTER POSITION, WE NEED TO GO TO RIGHT AFTER GET THE CONTAINER
+        }
 
         if(delta_y > CONTAINER_POSITION_ERROR_RANGE){            // CAMERA IS BELOW THE CONTAINER CENTER
           move_1_backward_2_forward();
@@ -409,7 +417,9 @@ void loop(){
         }
       }
       else if(delta_x < -CONTAINER_POSITION_ERROR_RANGE){        // CAMERA IS TO THE RIGHT OF THE CONTAINER CENTER
-        direction_go_back = 2;                                   // TO GO BACK TO THE CENTER POSITION, WE NEED TO GO TO LEFT AFTER GET THE CONTAINER
+        if(direction_go_back == 0){
+          direction_go_back = 2;                                 // TO GO BACK TO THE CENTER POSITION, WE NEED TO GO TO RIGHT AFTER GET THE CONTAINER
+        }
         
         if(delta_y > CONTAINER_POSITION_ERROR_RANGE){            // CAMERA IS BELOW THE CONTAINER CENTER
           move_1_forward_2_forward();
@@ -443,21 +453,6 @@ void loop(){
           }
           
           move_1_stop_2_stop();
-
-          // move_1_forward_2_forward();
-          // delay(500);
-          // move_1_stop_2_stop();
-
-          // if(direction_go_back == 1){     // 1 == LEFT
-          //   move_1_backward_2_forward();
-          //   delay(500);
-          //   move_1_stop_2_stop();
-          // }
-          // else{                           // 2 == RIGHT
-          //   move_1_forward_2_forward();
-          //   delay(500);
-          //   move_1_stop_2_stop();
-          // }
           
           Serial.print("ESP: Cc ");
           container_centralized = 1;
@@ -469,7 +464,7 @@ void loop(){
       command_identified = 0;
     }
     
-    delay(10);
+    delay(50);
   }
 
   container_centralized = 0;
@@ -500,50 +495,30 @@ void loop(){
     Serial.println(elapsed_time_y);
     
     Serial.println("ESP: Transporting container to the cart...");
-    
-    // elapsed_time_x -= 1000;
-    // elapsed_time_y -= 3000;
 
     if(direction_go_back == 1){     // 1 == LEFT
-      if(elapsed_time_x <= elapsed_time_y + TIME_BRIDGE_CENTER_TO_CART){
-        move_1_forward_2_backward();
-        delay(elapsed_time_x);
 
-        while(!lim_y_min){          // WHILE THE CONTAINER ISNT ON THE INITIAL POSITION OF Y AXIS
-          move_1_stop_2_backward();
-        }
-        lim_y_min = 0;
-        // move_1_stop_2_backward();
-        // delay(elapsed_time_y + TIME_BRIDGE_CENTER_TO_CART - elapsed_time_x);
+      // elapsed_time_x += 1000;
+
+      move_1_forward_2_backward();
+      delay(elapsed_time_x);
+
+      while(!lim_y_min){            // WHILE THE CONTAINER ISNT ON THE INITIAL POSITION OF Y AXIS
+        move_1_stop_2_backward();
       }
-      // else{
-      //   move_1_forward_2_backward();
-      //   delay(elapsed_time_y + TIME_BRIDGE_CENTER_TO_CART);
-        
-      //   move_1_forward_2_stop();
-      //   delay(elapsed_time_x - (elapsed_time_y + TIME_BRIDGE_CENTER_TO_CART));
-      // }
+      lim_y_min = 0;
     }
     else{                           // 2 == RIGHT
-      if(elapsed_time_x <= elapsed_time_y + TIME_BRIDGE_CENTER_TO_CART){
-        move_1_backward_2_backward();
-        delay(elapsed_time_x);
 
-        while(!lim_y_min){          // WHILE THE CONTAINER ISNT ON THE INITIAL POSITION OF Y AXIS
-          move_1_stop_2_backward();
-        }
-        lim_y_min = 0;
+      // elapsed_time_x -= 2000;
 
-        // move_1_stop_2_backward();
-        // delay(elapsed_time_y + TIME_BRIDGE_CENTER_TO_CART - elapsed_time_x);
+      move_1_backward_2_backward();
+      delay(elapsed_time_x);
+
+      while(!lim_y_min){            // WHILE THE CONTAINER ISNT ON THE INITIAL POSITION OF Y AXIS
+        move_1_stop_2_backward();
       }
-      // else{
-      //   move_1_backward_2_backward();
-      //   delay(elapsed_time_y + TIME_BRIDGE_CENTER_TO_CART);
-        
-      //   move_1_backward_2_stop();
-      //   delay(elapsed_time_x - (elapsed_time_y + TIME_BRIDGE_CENTER_TO_CART));
-      // }
+      lim_y_min = 0;
     }
 
     move_1_stop_2_stop();
@@ -740,7 +715,7 @@ void lower_load(){
   digitalWrite(ELECTROMAGNET_PIN, LOW);
   delay(500);
   servo.write(SERVO_STOPPED_VALUE + SERVO_SPEED); // counterclockwise
-  delay(ELECTROMAGNET_UP_TIME + 2000);
+  delay(ELECTROMAGNET_UP_TIME + 1200);
   servo.write(SERVO_STOPPED_VALUE);
 }
 

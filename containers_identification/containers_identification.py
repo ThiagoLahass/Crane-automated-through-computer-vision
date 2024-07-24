@@ -84,7 +84,7 @@ def main(container_queue):
                         img_mask[i] = cv2.inRange(img_HSV, lower, upper)
                         if use_morph_ops:
                             img_mask[i] = clean_noise_morph_ops(img_mask[i])
-                        cv2.imshow(COLORS_NAME[i], img_mask[i])
+                        # cv2.imshow(COLORS_NAME[i], img_mask[i])
 
                     if track_objects:
                         # get the center of nearest container tracked and draw crosshairs above it 
@@ -134,8 +134,8 @@ def main(container_queue):
                         
 
                     # Display of original and HSV images
-                    cv2.imshow("Image Original", img_original)
-                    cv2.imshow("Image HSV", img_HSV)
+                    # cv2.imshow("Image Original", img_original)
+                    # cv2.imshow("Image HSV", img_HSV)
     interface.stop_progress()
     interface.show_dialog("Transporte finalizado.", "info")
     port.reset_input_buffer()
@@ -159,10 +159,10 @@ if __name__ == "__main__":
         img_mask[i] = cv2.inRange(img_HSV, lower, upper)
         if use_morph_ops:
             img_mask[i] = clean_noise_morph_ops(img_mask[i])
-        cv2.imshow(COLORS_NAME[i], img_mask[i])
+        # cv2.imshow(COLORS_NAME[i], img_mask[i])
         
-    cv2.imshow("Image Original", img_original)
-    cv2.imshow("Image HSV", img_HSV)
+    # cv2.imshow("Image Original", img_original)
+    # cv2.imshow("Image HSV", img_HSV)
 
     # WAITING THE CRANE BE AT THE CENTRAL POSITION (DEFAULT)
     while(1):
