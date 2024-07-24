@@ -16,7 +16,7 @@ Servo servo;
 #define INFRARED_PIN                   25
 
 // OTHER SETUP VARIABLES
-#define ELECTROMAGNET_DOWN_TIME        2300
+#define ELECTROMAGNET_DOWN_TIME        1900
 #define ELECTROMAGNET_UP_TIME          7000
 #define CONTAINER_POSITION_ERROR_RANGE 20
 #define TIME_BRIDGE_CENTER_TO_CART     5000
@@ -53,7 +53,7 @@ int infrared_value = 0;
 /**
  * @brief Sets the motor speed based on the input from a speed potentiometer.
  */
-void setSpeed();
+void setSpeed(int motor_mov_speed);
 
 /**
  * @brief Controls the movement of motors in different directions based on the input pins.
@@ -63,62 +63,62 @@ void setSpeed();
  * @param in3_ State for motor IN3 pin.
  * @param in4_ State for motor IN4 pin.
  */
-void move(int in1_, int in2_, int in3_, int in4_);
+void move(int in1_, int in2_, int in3_, int in4_, int motor_mov_speed);
 
 /**
  * @brief Moves both motors forward.
  */
-void move_1_forward_2_forward();
+void move_1_forward_2_forward(int motor_mov_speed);
 
 /**
  * @brief Moves motor 1 forward and stops motor 2.
  */
-void move_1_forward_2_stop();
+void move_1_forward_2_stop(int motor_mov_speed);
 
 /**
  * @brief Moves motor 1 forward and motor 2 backward.
  */
-void move_1_forward_2_backward();
+void move_1_forward_2_backward(int motor_mov_speed);
 
 /**
  * @brief Stops motor 1 and moves motor 2 forward.
  */
-void move_1_stop_2_forward();
+void move_1_stop_2_forward(int motor_mov_speed);
 
 /**
  * @brief Stops both motors.
  */
-void move_1_stop_2_stop();
+void move_1_stop_2_stop(int motor_mov_speed);
 
 /**
  * @brief Stops motor 1 and moves motor 2 backward.
  */
-void move_1_stop_2_backward();
+void move_1_stop_2_backward(int motor_mov_speed);
 
 /**
  * @brief Moves motor 1 backward and motor 2 forward.
  */
-void move_1_backward_2_forward();
+void move_1_backward_2_forward(int motor_mov_speed);
 
 /**
  * @brief Stops motor 1 and moves motor 2 backward.
  */
-void move_1_backward_2_stop();
+void move_1_backward_2_stop(int motor_mov_speed);
 
 /**
  * @brief Moves both motors backward.
  */
-void move_1_backward_2_backward();
+void move_1_backward_2_backward(int motor_mov_speed);
 
 /**
  * @brief Moves the system to the initial position (0, 0) using the limit switch sensors.
  */
-void move_to_initial_position();
+void move_to_initial_position(int motor_mov_speed);
 
 /**
  * @brief Moves the system to the central position after reaching the initial position.
  */
-void move_to_central_position();
+void move_to_central_position(int motor_mov_speed);
 
 /**
  * @brief Lifts the load using a servo motor and an electromagnet.
@@ -309,33 +309,33 @@ void loop(){
       }
       
       if(direction_go_back == 1){     // 1 == LEFT
-        move_1_forward_2_backward();
+        move_1_forward_2_backward(MOTOR_MOV_SPEED);
         if(elapsed_time_x <= elapsed_time_y){
           delay(elapsed_time_x);
-          move_1_stop_2_backward();
+          move_1_stop_2_backward(MOTOR_MOV_SPEED);
           delay(elapsed_time_y - elapsed_time_x);
         }
         else{
           delay(elapsed_time_y);
-          move_1_forward_2_stop();
+          move_1_forward_2_stop(MOTOR_MOV_SPEED);
           delay(elapsed_time_x - elapsed_time_y);
         }
       }
       else{                           // 2 == RIGHT
-        move_1_backward_2_backward();
+        move_1_backward_2_backward(MOTOR_MOV_SPEED);
         if(elapsed_time_x <= elapsed_time_y){
           delay(elapsed_time_x);
-          move_1_stop_2_backward();
+          move_1_stop_2_backward(MOTOR_MOV_SPEED);
           delay(elapsed_time_y - elapsed_time_x);
         }
         else{
           delay(elapsed_time_y);
-          move_1_backward_2_stop();
+          move_1_backward_2_stop(MOTOR_MOV_SPEED);
           delay(elapsed_time_x - elapsed_time_y);
         }
       }
       
-      move_1_stop_2_stop();
+      move_1_stop_2_stop(MOTOR_MOV_SPEED);
 
       Serial.print("ESP: EoC2");
       delay(1000);
@@ -387,13 +387,13 @@ void loop(){
       }
 
       if( delta_x == 365 && delta_y == 240){                     // IN THIS CASE, THERE ARE NO OBJECT VISIBLE ON THE CAMERA
-        move_1_stop_2_stop();
+        move_1_stop_2_stop(MOTOR_MOV_SPEED);
         if(millis() - start_time_x > 5000){
           Serial.println("ESP: Cc");
           container_centralized = 1;
           end_of_course = 1;
           delay(500);
-          Serial.print("ESP: end ");
+          Serial.print("ESP: end");
           delay(500);
         }
       }
@@ -403,17 +403,17 @@ void loop(){
         }
 
         if(delta_y > CONTAINER_POSITION_ERROR_RANGE){            // CAMERA IS BELOW THE CONTAINER CENTER
-          move_1_backward_2_forward();
+          move_1_backward_2_forward(MOTOR_MOV_SPEED);
         }
         else if(delta_y < -CONTAINER_POSITION_ERROR_RANGE){      // CAMERA IS ABOVE THE CONTAINER CENTER
-          move_1_backward_2_backward();
+          move_1_backward_2_backward(MOTOR_MOV_SPEED);
         }
         else{                                                    // CAMERA IS CENTERED VERTICALLY ON THE CONTAINER
           // Serial.print(" ESP: Centered in y");
           if(elapsed_time_y == 0){
             elapsed_time_y = millis() - start_time_y;
           }
-          move_1_backward_2_stop();
+          move_1_backward_2_stop(MOTOR_MOV_SPEED);
         }
       }
       else if(delta_x < -CONTAINER_POSITION_ERROR_RANGE){        // CAMERA IS TO THE RIGHT OF THE CONTAINER CENTER
@@ -422,17 +422,17 @@ void loop(){
         }
         
         if(delta_y > CONTAINER_POSITION_ERROR_RANGE){            // CAMERA IS BELOW THE CONTAINER CENTER
-          move_1_forward_2_forward();
+          move_1_forward_2_forward(MOTOR_MOV_SPEED);
         }
         else if(delta_y < -CONTAINER_POSITION_ERROR_RANGE){      // CAMERA IS ABOVE THE CONTAINER CENTER
-          move_1_forward_2_backward();
+          move_1_forward_2_backward(MOTOR_MOV_SPEED);
         }
         else{                                                    // CAMERA IS CENTERED VERTICALLY ON THE CONTAINER
           // Serial.print(" ESP: Centered in y");
           if(elapsed_time_y == 0){
             elapsed_time_y = millis() - start_time_y;
           }
-          move_1_forward_2_stop();
+          move_1_forward_2_stop(MOTOR_MOV_SPEED);
         }
       }
       else{                                                      // CAMERA IS CENTERED HORIZONTALLY ON THE CONTAINER
@@ -442,19 +442,19 @@ void loop(){
         }
         
         if(delta_y > CONTAINER_POSITION_ERROR_RANGE){            // CAMERA IS BELOW THE CONTAINER CENTER
-          move_1_stop_2_forward();      
+          move_1_stop_2_forward(MOTOR_MOV_SPEED);      
         }
         else if(delta_y < -CONTAINER_POSITION_ERROR_RANGE){      // CAMERA IS ABOVE THE CONTAINER CENTER
-          move_1_stop_2_backward();
+          move_1_stop_2_backward(MOTOR_MOV_SPEED);
         }
         else{                                                    // CAMERA IS CENTERED IN BOTH DIRECTIONS !!!
           if(elapsed_time_y == 0){
             elapsed_time_y = millis() - start_time_y;
           }
           
-          move_1_stop_2_stop();
+          move_1_stop_2_stop(MOTOR_MOV_SPEED);
           
-          Serial.print("ESP: Cc ");
+          Serial.print("ESP: Cc");
           container_centralized = 1;
         }
       }
@@ -500,11 +500,11 @@ void loop(){
 
       // elapsed_time_x += 1000;
 
-      move_1_forward_2_backward();
+      move_1_forward_2_backward(MOTOR_MOV_SPEED + 2);
       delay(elapsed_time_x);
 
       while(!lim_y_min){            // WHILE THE CONTAINER ISNT ON THE INITIAL POSITION OF Y AXIS
-        move_1_stop_2_backward();
+        move_1_stop_2_backward(MOTOR_MOV_SPEED);
       }
       lim_y_min = 0;
     }
@@ -512,16 +512,16 @@ void loop(){
 
       // elapsed_time_x -= 2000;
 
-      move_1_backward_2_backward();
+      move_1_backward_2_backward(MOTOR_MOV_SPEED - 3);
       delay(elapsed_time_x);
 
       while(!lim_y_min){            // WHILE THE CONTAINER ISNT ON THE INITIAL POSITION OF Y AXIS
-        move_1_stop_2_backward();
+        move_1_stop_2_backward(MOTOR_MOV_SPEED);
       }
       lim_y_min = 0;
     }
 
-    move_1_stop_2_stop();
+    move_1_stop_2_stop(MOTOR_MOV_SPEED);
     
     Serial.println("ESP: Container centered above the cart");
     
@@ -541,11 +541,11 @@ void loop(){
 
     int count = 0;
     while(count < TIME_BRIDGE_CENTER_TO_CART){
-      move_1_stop_2_forward();
+      move_1_stop_2_forward(MOTOR_MOV_SPEED);
       delay(100);
       count += 100;
     }
-    move_1_stop_2_stop();
+    move_1_stop_2_stop(MOTOR_MOV_SPEED);
 
     Serial.print("ESP: end");
 
@@ -561,56 +561,52 @@ void loop(){
 ///////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////// FUNCTION DEFINITIONS ////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////
-void setSpeed(){
-  // int motor_speed = analogRead(MOTOR_MOV_SPEED_PIN);
-  // motor_speed = map(motor_speed, 0, 4095, 0, 255);
-  // analogWrite(EN_PIN, motor_speed);
-  
-  analogWrite(EN_PIN, MOTOR_MOV_SPEED);
+void setSpeed(int motor_mov_speed){
+  analogWrite(EN_PIN, motor_mov_speed);
 }
 
-void move(int in1_, int in2_, int in3_, int in4_){
-  setSpeed();
+void move(int in1_, int in2_, int in3_, int in4_, int motor_mov_speed){
+  setSpeed(motor_mov_speed);
   digitalWrite(IN1_PIN, in1_);
   digitalWrite(IN2_PIN, in2_);
   digitalWrite(IN3_PIN, in3_);
   digitalWrite(IN4_PIN, in4_);
 }
 
-void move_1_forward_2_forward(){
-  move(LOW, HIGH, LOW, HIGH);
+void move_1_forward_2_forward(int motor_mov_speed){
+  move(LOW, HIGH, LOW, HIGH, motor_mov_speed);
 }
 
-void move_1_forward_2_stop(){
-  move(LOW, HIGH, LOW, LOW);
+void move_1_forward_2_stop(int motor_mov_speed){
+  move(LOW, HIGH, LOW, LOW, motor_mov_speed);
 }
 
-void move_1_forward_2_backward(){
-  move(LOW, HIGH, HIGH, LOW);
+void move_1_forward_2_backward(int motor_mov_speed){
+  move(LOW, HIGH, HIGH, LOW, motor_mov_speed);
 }
 
-void move_1_stop_2_forward(){
-  move(LOW, LOW, LOW, HIGH);
+void move_1_stop_2_forward(int motor_mov_speed){
+  move(LOW, LOW, LOW, HIGH, motor_mov_speed);
 }
 
-void move_1_stop_2_stop(){
-  move(LOW, LOW, LOW, LOW);
+void move_1_stop_2_stop(int motor_mov_speed){
+  move(LOW, LOW, LOW, LOW, motor_mov_speed);
 }
 
-void move_1_stop_2_backward(){
-  move(LOW, LOW, HIGH, LOW);
+void move_1_stop_2_backward(int motor_mov_speed){
+  move(LOW, LOW, HIGH, LOW, motor_mov_speed);
 }
 
-void move_1_backward_2_forward(){
-  move(HIGH, LOW, LOW, HIGH);
+void move_1_backward_2_forward(int motor_mov_speed){
+  move(HIGH, LOW, LOW, HIGH, motor_mov_speed);
 }
 
-void move_1_backward_2_stop(){
-  move(HIGH, LOW, LOW, LOW);
+void move_1_backward_2_stop(int motor_mov_speed){
+  move(HIGH, LOW, LOW, LOW, motor_mov_speed);
 }
 
-void move_1_backward_2_backward(){
-  move(HIGH, LOW, HIGH, LOW);
+void move_1_backward_2_backward(int motor_mov_speed){
+  move(HIGH, LOW, HIGH, LOW, motor_mov_speed);
 }
 
 void move_to_initial_position(){
@@ -618,7 +614,7 @@ void move_to_initial_position(){
   bool initial_position_y_reached = false;
   
   Serial.println("ESP: Moving the car to the initial position (0,0)...");
-  move_1_backward_2_backward();
+  move_1_backward_2_backward(MOTOR_MOV_SPEED);
   
   while(1){
     
@@ -630,7 +626,7 @@ void move_to_initial_position(){
       Serial.println("ESP: Initial position reached");
       // move_1_forward_2_forward();
       // delay(200);
-      move_1_stop_2_stop();
+      move_1_stop_2_stop(MOTOR_MOV_SPEED);
       lim_x_min = 0;
       lim_x_max = 0;
       lim_y_min = 0;
@@ -641,14 +637,14 @@ void move_to_initial_position(){
     // ONLY THE X TRANSLATION MOTOR SHOULD BE DEACTIVATED
     if(!initial_position_x_reached && lim_x_min == 1){
       initial_position_x_reached = true;
-      move_1_stop_2_backward();
+      move_1_stop_2_backward(MOTOR_MOV_SPEED);
       Serial.println("ESP: Initial x position reached");
     }
     // IF ONLY THE Y MINIMUM LIMIT SENSOR IS ACTIVATED
     // ONLY THE Y TRANSLATION MOTOR SHOULD BE DEACTIVATED
     if(!initial_position_y_reached && lim_y_min == 1){
       initial_position_y_reached = true;
-      move_1_backward_2_stop();
+      move_1_backward_2_stop(MOTOR_MOV_SPEED);
       Serial.println("ESP: Initial y position reached");
     }
   }
@@ -657,7 +653,7 @@ void move_to_initial_position(){
 void move_to_central_position(){
   move_to_initial_position();
   
-  move_1_forward_2_forward();
+  move_1_forward_2_forward(MOTOR_MOV_SPEED);
   lim_x_min = 0;
   lim_x_max = 0;
   lim_y_min = 0;
@@ -666,10 +662,10 @@ void move_to_central_position(){
   Serial.println("ESP: Moving the car to the central position...");
 
   delay(2600);
-  move_1_stop_2_forward();
+  move_1_stop_2_forward(MOTOR_MOV_SPEED);
 
   delay(2500);
-  move_1_stop_2_stop();
+  move_1_stop_2_stop(MOTOR_MOV_SPEED);
   
   Serial.println("ESP: Central position reached!");
 }
@@ -696,7 +692,7 @@ void lift_load(){
     delay(10);
   }
 
-  delay(200);
+  delay(300);
 
   servo.write(SERVO_STOPPED_VALUE);
   delay(500);
@@ -715,7 +711,7 @@ void lower_load(){
   digitalWrite(ELECTROMAGNET_PIN, LOW);
   delay(500);
   servo.write(SERVO_STOPPED_VALUE + SERVO_SPEED); // counterclockwise
-  delay(ELECTROMAGNET_UP_TIME + 1200);
+  delay(ELECTROMAGNET_UP_TIME + 800);
   servo.write(SERVO_STOPPED_VALUE);
 }
 
@@ -754,7 +750,7 @@ void setup_servo(){
 void lim_min_x_interrupt(){
   // Checks if the debounce time has been met
   if ( (millis() - timestamp_last_activation) >= DEBOUNCE_TIME ) {
-    move_1_stop_2_stop();
+    move_1_stop_2_stop(MOTOR_MOV_SPEED);
     // Serial.println("ESP: LIM MIN X reached");
     // delay(1000);
     // move_to_initial_position();
@@ -767,7 +763,7 @@ void lim_min_x_interrupt(){
 void lim_max_x_interrupt(){
   // Checks if the debounce time has been met
   if ( (millis() - timestamp_last_activation) >= DEBOUNCE_TIME ) {
-    move_1_stop_2_stop();
+    move_1_stop_2_stop(MOTOR_MOV_SPEED);
     // Serial.println("ESP: LIM MAX X reached");
     // delay(1000);
     // move_to_initial_position();
@@ -780,7 +776,7 @@ void lim_max_x_interrupt(){
 void lim_min_y_interrupt(){
   // Checks if the debounce time has been met
   if ( (millis() - timestamp_last_activation) >= DEBOUNCE_TIME ) {
-    move_1_stop_2_stop();
+    move_1_stop_2_stop(MOTOR_MOV_SPEED);
     // Serial.println("ESP: LIM MIX Y reached");
     // delay(1000);
     // move_to_initial_position();
@@ -793,7 +789,7 @@ void lim_min_y_interrupt(){
 void lim_max_y_interrupt(){
   // Checks if the debounce time has been met
   if ( (millis() - timestamp_last_activation) >= DEBOUNCE_TIME ) {
-    move_1_stop_2_stop();
+    move_1_stop_2_stop(MOTOR_MOV_SPEED);
     // Serial.println("ESP: LIM MAX Y reached");
     // delay(1000);
     // move_to_initial_position();

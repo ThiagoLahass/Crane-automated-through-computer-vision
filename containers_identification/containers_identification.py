@@ -103,18 +103,16 @@ def main(container_queue):
                         cmd = f'{delta_x_str} {delta_y_str}\n'
                         my_serial.write_ser(port, cmd)
 
-                        # time.sleep(0.1)
-
                         # SERIAL COMUNICATION - READ
                         string = my_serial.read_ser(port, my_serial.MAX_BUFF_LEN).strip()
                         if(len(string)):
                             print(f"{string}")
                             # If the difference between the current position of the object in the camera
                             # and the center is within the allowed limit, ESP sends a message to our BACKEND informing this
-                            if (string == "ESP: Cc"):       # Received when the crane its above the select container ("Container centrilized")
+                            if ("Cc" in string):       # Received when the crane its above the select container ("Container centrilized")
                                 print("BACKEND: Centralized container, stopping tracking...")
                                 track_objects = False
-                            elif (string == "ESP: EoC1"):   # Received when End of course activated, going to the center position ("End of Course 1")
+                            elif ("EoC1" in string):   # Received when End of course activated, going to the center position ("End of Course 1")
                                 print("BACKEND: One of the translation limits was reached, the container was inaccessible, so we had to return to the central position and start searching for the next container...")
                                 track_objects = False
 
@@ -124,10 +122,10 @@ def main(container_queue):
                             print(f"{string}")
                             # When the bridge has completed the search cycle for a container,
                             # the ESP also sends a message to the BACKEND informing this fact
-                            if(string == "ESP: end"):       # Received when the complete cycle of take a container is ended
+                            if("end" in string):       # Received when the complete cycle of take a container is ended
                                 print("BACKEND: Searching for the next container, if it is the last one, return to the first loop ('begin')")
                                 break
-                            elif (string == "ESP: EoC2"):   # Received when End of course was activated, and the center position was reached ("End of Course 2")
+                            elif ("EoC2" in string):   # Received when End of course was activated, and the center position was reached ("End of Course 2")
                                 print("BACKEND: Crane recentralized, now we can start searching for the next container...\n")
                                 time.sleep(1)
                                 break
