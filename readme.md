@@ -18,6 +18,7 @@ A animação vista no início desse documento é uma parte do vídeo completo do
 ## Componentes do Sistema
 
 ### Hardware:
+- **Ponte Rolante:**
    - **ESP32:** Microcontrolador responsável pelo controle dos motores e comunicação serial.
    - **Motores de Translação:** Permitem o movimento longitudinal (frente/trás) e movimento transversal (esquerda/direita) da ponte rolante.
    - **Ponte H:** Controla o movimento dos motores de translação.
@@ -28,7 +29,13 @@ A animação vista no início desse documento é uma parte do vídeo completo do
    - **Sensor Reflexivo Infravermelho TCRT5000:** Utilizado para verificar se o eletroímã já está posicionado em cima do contêiner ou já chegou ao chão.
    - **Interruptores:** Para acionar e desativar componentes como a chave geral, ponte H, luzes, entre outros.
    - **Câmera:** Integrada à ponte rolante para capturar imagens dos contêineres.
-   - **Carrinho Seguidor de Linha:** Transporta os contêineres da área de carga para a área de descarga e depois volta à área de carga.
+- **Carrinho autônomo:**
+   - **Arduíno Leonardo:** Microcontrolador responsável pelo controle dos motores e sensores do carrinho.
+   - **Motores Esquerdo e Direito:** Permitem o movimento do carrinho para frente, para trás e curvas.
+   - **Ponte H:** Controla o movimento dos motores esquerdo e direito.
+   - **Sensor Reflexivo Infravermelho TCRT5000:** Utilizado para detecção de linha e orientação do carrinho no trajeto.
+   - **LDR (Light Dependent Resistor):** Sensor utilizado para detectar variações de luz na caçamba do carrinho e assim permitir identificar a presença ou não do conteiner.
+   - **Bateria 9V:** Fonte de alimentação para o Arduino e os motores do carrinho.
 
 #### Você pode visualizar o *PDF do esquemático do hardware da ponte rolante* [aqui](doc/Schematic_crane.pdf).
 
@@ -36,7 +43,7 @@ A animação vista no início desse documento é uma parte do vídeo completo do
 
 ### Software (Bibliotecas utilizadas):
 - **[OpenCV:](https://docs.opencv.org/4.x/d1/dfb/intro.html)** Biblioteca de visão computacional para processamento de imagens.
-- **[PySerial:](https://pyserial.readthedocs.io/en/latest/pyserial.html)** Interface de comunicação entre o ESP32 e o sistema de visão computacional.
+- **[PySerial:](https://pyserial.readthedocs.io/en/latest/pyserial.html)** Interface de comunicação entre o *ESP32* e o sistema de visão computacional em *Python*.
 - **[Customtkinter:](https://customtkinter.tomschimansky.com/documentation/)** Biblioteca para criação de interfaces gráficas personalizadas.
 - **[CTkSpinbox:](https://pypi.org/project/CTkSpinbox/)** Widget para criação de spinboxes no customtkinter.
 - **[PIL:](https://pillow.readthedocs.io/en/stable/)** Biblioteca para manipulação de imagens.
@@ -44,16 +51,25 @@ A animação vista no início desse documento é uma parte do vídeo completo do
 
 ## Funcionamento
 
-O sistema captura imagens através da câmera integrada na ponte rolante e utiliza a biblioteca OpenCV para processar essas imagens e identificar containers por suas respectivas cores. O usuário pode selecionar, através de uma interface, a quantidade e tipo de containers desejados, e o sistema irá operar conforme as escolhas feitas.
+O sistema captura imagens através da câmera integrada na ponte rolante e utiliza a biblioteca *OpenCV* para processar essas imagens e identificar containers por suas respectivas cores. O usuário pode selecionar, através de uma interface, a quantidade e tipo de containers desejados, e o sistema irá operar conforme as escolhas feitas.
 
 ## Estrutura do Repositório
 
-- **crane.ino:** Código em C++ embarcado no ESP32, responsável pelo controle de todos os componentes da ponte rolante.
-- **thresholds-identifier.py:** Utilizado para identificar bons valores no espaço de cores HSV para identificar cada uma das cores antes da execução do código principal.
-- **containers_identification.py:** Código principal que executa simultaneamente com o microcontrolador ESP32, processando a imagem e enviando as informações via comunicação serial.
-- **interface.py:** Implementa a interface gráfica para a seleção de quantidade e tipo de containers.
-- **my_serial.py:** Implementação das funções usadas para realizar a comunicação serial.
-- **utils.py:** Funções auxiliares no funcionamento do projeto, desde a identificação dos contêineres através do OpenCV até a seleção de cores e quantidades.
+- **crane_control/crane_control.ino:**
+   Código em C++ embarcado no ESP32, responsável pelo controle de todos os componentes da ponte rolante.
+
+- **thresholds-identifier/thresholds-identifier.py:** 
+   Utilizado para identificar bons valores no espaço de cores HSV para identificar cada uma das cores antes da execução do código principal.
+
+- **containers_identification/containers_identification.py:** Código principal que executa simultaneamente com o microcontrolador ESP32, processando a imagem e enviando as informações via comunicação serial.
+
+- **containers_identification/interface.py:** Implementa a interface gráfica para a seleção de quantidade e tipo de containers.
+
+- **containers_identification/my_serial.py:** Implementação das funções usadas para realizar a comunicação serial.
+
+- **containers_identification/utils.py:** Funções auxiliares no funcionamento do projeto, desde a identificação dos contêineres através do OpenCV até a seleção de cores e quantidades.
+
+- **car_control/car_control.ino:** Código em C++ embarcado no Arduino Leonardo, responsável pelo controle do carrinho autônomo.
 
 ## Instalação e Configuração
 
