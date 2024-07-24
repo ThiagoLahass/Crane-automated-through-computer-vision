@@ -4,9 +4,7 @@
 Vídeo da ponte em funcionamento
 -->
 <p align="center">
-  <video src="media/ponte-em-funcionamento-edited.mp4" autoplay loop muted>
-    Seu navegador não suporta a tag de vídeo.
-  </video>
+  <img src="media/working.gif" />
 </p>
 
 ## Descrição do Projeto
@@ -101,9 +99,7 @@ O sistema captura imagens através da câmera integrada na ponte rolante e utili
 3. **Operação Automática:**
    Após a seleção, o sistema operará automaticamente para mover e posicionar os containers conforme especificado.
    <p align="center">
-      <video src="media/ponte-em-funcionamento-edited.mp4" autoplay loop muted>
-         Seu navegador não suporta a tag de vídeo.
-      </video>
+      <img src="media/working.gif" />
    </p>
 
 ## Contribuição
