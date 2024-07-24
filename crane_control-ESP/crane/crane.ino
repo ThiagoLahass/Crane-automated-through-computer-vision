@@ -382,6 +382,14 @@ void loop(){
 
       if( delta_x == 365 && delta_y == 240){                     // IN THIS CASE, THERE ARE NO OBJECT VISIBLE ON THE CAMERA
         move_1_stop_2_stop();
+        if(millis() - start_time_x > 5000){
+          Serial.println("ESP: Cc");
+          container_centralized = 1;
+          end_of_course = 1;
+          delay(500);
+          Serial.print("ESP: end ");
+          delay(500);
+        }
       }
       else if(delta_x > CONTAINER_POSITION_ERROR_RANGE){         // CAMERA IS TO THE LEFT OF THE CONTAINER CENTER
         direction_go_back = 1;                                   // TO GO BACK TO THE CENTER POSITION, WE NEED TO GO TO RIGHT AFTER GET THE CONTAINER
@@ -466,109 +474,6 @@ void loop(){
 
   container_centralized = 0;
 
-
-  // ///////////////////////////////////////////////////////////////////////////////////
-  // ///////////////////////// SELECTED CONTAINER SEARCH STATE /////////////////////////     SECOND OPTION
-  // ///////////////////////////////////////////////////////////////////////////////////
-  // // -> 'begin' COMMAND RECEIVED FROM ESP, START SEARCHING CONTAINER BASED ON DELTAS
-  // // OF CONTAINER CENTER POSITION TO CAMERA CENTER POSITION
-  // /* THE DATA RECEIVED HERE FROM ESP MUST BE IN THE FORMAT:
-  //     "sxxx zyyy",
-  //     WHERE:
-  //     s is the sign of delta_x (+ or -);
-  //     xxx are the 3 characters of delta_x;
-  //     z is the sign of delta_y (+ or -);
-  //     yyy are the 3 characters of delta_y.
-  //   */
-  // command_identified = 0;
-  // int container_centralized = 0;
-  // str = "";
-
-  // int TIME_CONSTANT_X = 100;
-  // int TIME_CONSTANT_Y = 100;
-
-  // Serial.println("ESP: Receiving container position...");
-
-  // while(!container_centralized){
-
-  //   // CHECKING IF ANY OF THE END OF COURSE SENSORS HAVE BEEN ACTIVATED
-  //   if(lim_x_min == 1 || lim_x_max == 1 || lim_y_min == 1 || lim_y_max == 1){
-  //     Serial.print("ESP: EoC1");
-  //     delay(500);
-
-  //     lim_x_min = 0;
-  //     lim_x_max = 0;
-  //     lim_y_min = 0;
-  //     lim_y_max = 0;
-
-  //     // GOING BACK TO THE CENTRAL POSITION
-  //     // Assuming that going back to the central position is not needed here, remove or adjust this part accordingly.
-
-  //     Serial.print("ESP: EoC2");
-  //     delay(1000);
-
-  //     end_of_course = 1;
-      
-  //     break;
-  //   }
-
-  //   if (Serial.available() > 0) {          // Check if data is available on the serial
-  //     str = Serial.readStringUntil('\n');  // Read the received data as a string until newline
-  //     str.trim();                          // Remove whitespace from the start and end of the string
-  //     if(!str.equals("")){
-  //       command_identified = 1;
-  //     }
-  //   }
-      
-  //   if(command_identified){
-  //     // CHECK COMMAND
-  //     String str_delta_x = str.substring(0, 4); // Extract the first 4 characters (delta_x)
-  //     String str_delta_y = str.substring(5, 9); // Extract the last  4 characters (delta_y)
-
-  //     // Convert strings to integers
-  //     delta_x = str_delta_x.toInt();
-  //     delta_y = str_delta_y.toInt();
-
-  //     if(delta_x == 320 && delta_y == 240){  // IN THIS CASE, THERE ARE NO OBJECT VISIBLE ON THE CAMERA
-  //       move_1_stop_2_stop();
-  //     }
-  //     else {
-  //       // Convert delta values to time
-  //       int time_x = abs(delta_x) * TIME_CONSTANT_X; // Adjust TIME_CONSTANT_X based on your system
-  //       int time_y = abs(delta_y) * TIME_CONSTANT_Y; // Adjust TIME_CONSTANT_Y based on your system
-
-  //       // Moving in the x direction
-  //       if(delta_x > 0) {           // CAMERA IS TO THE LEFT OF THE CONTAINER CENTER
-  //         move_1_backward_2_stop();
-  //       }
-  //       else if(delta_x < 0) {      // CAMERA IS TO THE RIGHT OF THE CONTAINER CENTER
-  //         move_1_forward_2_stop();
-  //       }
-  //       delay(time_x);
-  //       move_1_stop_2_stop();
-
-  //       // Moving in the y direction
-  //       if(delta_y > 0) {           // CAMERA IS BELOW THE CONTAINER CENTER
-  //         move_1_stop_2_forward();
-  //       }
-  //       else if(delta_y < 0) {      // CAMERA IS ABOVE THE CONTAINER CENTER
-  //         move_1_stop_2_backward();
-  //       }
-  //       delay(time_y);
-  //       move_1_stop_2_stop();
-
-  //       Serial.print("ESP: Cc ");
-  //       container_centralized = 1;
-  //     }
-
-  //     // Reset variables 
-  //     str = "";
-  //     command_identified = 0;
-  //   }
-    
-  //   delay(10);
-  // }
-
   // IF END OF COURSE IS ACTIVATED, WE MUST RESTART THE MAIN LOOP
   if(end_of_course == 1){
     end_of_course = 0;
@@ -605,7 +510,6 @@ void loop(){
         delay(elapsed_time_x);
 
         while(!lim_y_min){          // WHILE THE CONTAINER ISNT ON THE INITIAL POSITION OF Y AXIS
-          setSpeed();
           move_1_stop_2_backward();
         }
         lim_y_min = 0;
@@ -626,7 +530,6 @@ void loop(){
         delay(elapsed_time_x);
 
         while(!lim_y_min){          // WHILE THE CONTAINER ISNT ON THE INITIAL POSITION OF Y AXIS
-          setSpeed();
           move_1_stop_2_backward();
         }
         lim_y_min = 0;
@@ -787,10 +690,10 @@ void move_to_central_position(){
 
   Serial.println("ESP: Moving the car to the central position...");
 
-  delay(3000);
+  delay(2600);
   move_1_stop_2_forward();
 
-  delay(2000);
+  delay(2500);
   move_1_stop_2_stop();
   
   Serial.println("ESP: Central position reached!");
@@ -822,7 +725,7 @@ void lift_load(){
 
   servo.write(SERVO_STOPPED_VALUE);
   delay(500);
-  digitalWrite(ELECTROMAGNET_PIN, LOW);           // THE LOGIC IS INVERSE, "LOW" TURNS *ON* THE ELETROMAGNETIC
+  digitalWrite(ELECTROMAGNET_PIN, HIGH);
   delay(500);
   servo.write(SERVO_STOPPED_VALUE + SERVO_SPEED); // clockwise
   delay(ELECTROMAGNET_UP_TIME);
@@ -834,7 +737,7 @@ void lower_load(){
   delay(ELECTROMAGNET_DOWN_TIME);
   servo.write(SERVO_STOPPED_VALUE);
   delay(500);
-  digitalWrite(ELECTROMAGNET_PIN, HIGH);           // THE LOGIC IS INVERSE, "HIGH" TURNS *OFF* THE ELETROMAGNETIC
+  digitalWrite(ELECTROMAGNET_PIN, LOW);
   delay(500);
   servo.write(SERVO_STOPPED_VALUE + SERVO_SPEED); // counterclockwise
   delay(ELECTROMAGNET_UP_TIME + 2000);
