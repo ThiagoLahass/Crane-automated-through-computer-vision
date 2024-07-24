@@ -13,7 +13,7 @@ O Sistema de Automação Logística com Visão Computacional é uma solução in
 
 O video do pitch inicial do projeto pode ser encontrado [aqui](https://youtu.be/iw18S4EYCus?si=bXUdSKVfdXWQbk5L).
 
-O video do projeto final em funcionamento pode ser encontrado [aqui](/media/under_development.gif).
+A animação vista no início desse documento é uma parte do vídeo completo do projeto em funcionamento, acelerado em 3x. O video completo pode ser encontrado [aqui](/media/under_development.gif).
 
 ## Componentes do Sistema
 
@@ -30,9 +30,9 @@ O video do projeto final em funcionamento pode ser encontrado [aqui](/media/unde
    - **Câmera:** Integrada à ponte rolante para capturar imagens dos contêineres.
    - **Carrinho Seguidor de Linha:** Transporta os contêineres da área de carga para a área de descarga e depois volta à área de carga.
 
-#### Você pode visualizar o *esquemático do hardware da ponte rolante* em [PDF](doc/Schematic_crane.pdf).
+#### Você pode visualizar o *PDF do esquemático do hardware da ponte rolante* [aqui](doc/Schematic_crane.pdf).
 
-#### Além disso, também pode visualizar o *esquemático do hardware do carrinho autônomo* em [PDF](doc/Schematic_car_linefollower.pdf).
+#### Além disso, também pode encontrar o *PDF do esquemático do hardware do carrinho autônomo* [aqui](doc/Schematic_car_linefollower.pdf).
 
 ### Software (Bibliotecas utilizadas):
 - **[OpenCV:](https://docs.opencv.org/4.x/d1/dfb/intro.html)** Biblioteca de visão computacional para processamento de imagens.
@@ -76,7 +76,7 @@ O sistema captura imagens através da câmera integrada na ponte rolante e utili
    pip install -r requirements.txt
    ```
 
-3. Compile e carregue o código `crane.ino` no ESP32 utilizando a Arduino IDE.
+3. Compile e carregue o código `crane.ino` no ESP32 utilizando a *Arduino IDE*.
 
 4. Execute `thresholds-identifier.py` para identificar os valores de cor HSV ideais. Após isso, ajuste os valores das variáveis para cada uma das cores em `containers_identification.py`. Por exemplo, os valores para a cor vermelha devem ser definidos em `H_MIN_RED`, `H_MAX_RED`, `S_MIN_RED`, `S_MAX_RED`, `V_MIN_RED`, `V_MAX_RED`.
 
@@ -118,4 +118,4 @@ O sistema captura imagens através da câmera integrada na ponte rolante e utili
 
 ## Agradecimentos
 
-Agradecemos a todos os contribuidores e apoiadores deste projeto, principalmente ao Prof. Dr. Rodolfo da Silva Villaça e Prof. Dr. Ricardo Carminati de Mello.
+Agradecemos a todos os contribuidores e apoiadores deste projeto, principalmente ao Prof. Dr. Rodolfo da Silva Villaça e Prof. Dr. Ricardo Carminati de Mello por acompanharem o seu desenvolvimento.
