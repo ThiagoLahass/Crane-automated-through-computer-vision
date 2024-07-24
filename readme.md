@@ -32,9 +32,9 @@ O video do projeto final em funcionamento pode ser encontrado [aqui](/media/unde
    - **Câmera:** Integrada à ponte rolante para capturar imagens dos contêineres.
    - **Carrinho Seguidor de Linha:** Transporta os contêineres da área de carga para a área de descarga e depois volta à área de carga.
 
-#### Você pode visualizar o *esquemático do hardware da ponte rolante* em [PDF](doc/Schematic_crane.png).
+#### Você pode visualizar o *esquemático do hardware da ponte rolante* em [PDF](doc/Schematic_crane.pdf).
 
-#### Além disso, também pode visualizar o *esquemático do hardware do carrinho autônomo* em [PDF](doc/Schematic_car_linefollower.png).
+#### Além disso, também pode visualizar o *esquemático do hardware do carrinho autônomo* em [PDF](doc/Schematic_car_linefollower.pdf).
 
 ### Software (Bibliotecas utilizadas):
 - **[OpenCV:](https://docs.opencv.org/4.x/d1/dfb/intro.html)** Biblioteca de visão computacional para processamento de imagens.
