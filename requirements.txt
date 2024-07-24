@@ -1,3 +1,6 @@
-opencv-python
-numpy
-pyserial
+opencv-python==4.9.0.80
+numpy==1.26.4
+pyserial==3.5
+customtkinter==5.2.2
+CTkSpinbox==1.4.1
+CTkMessagebox==2.7
