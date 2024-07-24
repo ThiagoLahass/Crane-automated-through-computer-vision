@@ -9,7 +9,7 @@ Vídeo da ponte em funcionamento
 
 ## Descrição do Projeto
 
-O Sistema de Automação Logística com Visão Computacional é uma solução inovadora que combina robótica, visão computacional e comunicação serial para otimizar a logística em um ambiente automatizado. Utilizando uma ponte rolante controlada por um ESP32, o sistema é capaz de identificar, localizar e mover contêineres de diferentes cores de forma precisa e eficiente.
+O Sistema de Automação Logística com Visão Computacional é uma solução inovadora que combina robótica, visão computacional e comunicação serial para otimizar a logística em um ambiente automatizado. Utilizando uma ponte rolante controlada por um *ESP32*, o sistema é capaz de identificar, localizar e mover contêineres de diferentes cores de forma precisa e eficiente.
 
 O video do pitch inicial do projeto pode ser encontrado [aqui](https://youtu.be/iw18S4EYCus?si=bXUdSKVfdXWQbk5L).
 
@@ -34,7 +34,7 @@ A animação vista no início desse documento é uma parte do vídeo completo do
    - **Motores Esquerdo e Direito:** Permitem o movimento do carrinho para frente, para trás e curvas.
    - **Ponte H:** Controla o movimento dos motores esquerdo e direito.
    - **Sensor Reflexivo Infravermelho TCRT5000:** Utilizado para detecção de linha e orientação do carrinho no trajeto.
-   - **LDR (Light Dependent Resistor):** Sensor utilizado para detectar variações de luz na caçamba do carrinho e assim permitir identificar a presença ou não do conteiner.
+   - **LDR (Light Dependent Resistor):** Sensor utilizado para detectar variações de luz na caçamba do carrinho e assim permitir identificar a presença ou não do contêiner.
    - **Bateria 9V:** Fonte de alimentação para o Arduino e os motores do carrinho.
 
 #### Você pode visualizar o *PDF do esquemático do hardware da ponte rolante* [aqui](doc/Schematic_crane.pdf).
@@ -44,24 +44,24 @@ A animação vista no início desse documento é uma parte do vídeo completo do
 ### Software (Bibliotecas utilizadas):
 - **[OpenCV:](https://docs.opencv.org/4.x/d1/dfb/intro.html)** Biblioteca de visão computacional para processamento de imagens.
 - **[PySerial:](https://pyserial.readthedocs.io/en/latest/pyserial.html)** Interface de comunicação entre o *ESP32* e o sistema de visão computacional em *Python*.
+- **[NumPy:](https://numpy.org/doc/)** Biblioteca fundamental para computação científica em *Python*, usada para manipulação de *arrays* e operações matemáticas de alto desempenho.
 - **[Customtkinter:](https://customtkinter.tomschimansky.com/documentation/)** Biblioteca para criação de interfaces gráficas personalizadas.
-- **[CTkSpinbox:](https://pypi.org/project/CTkSpinbox/)** Widget para criação de spinboxes no customtkinter.
-- **[PIL:](https://pillow.readthedocs.io/en/stable/)** Biblioteca para manipulação de imagens.
-- **[CTkMessagebox:](https://github.com/Akascape/CTkMessagebox)** Widget para criação de messageboxes no customtkinter.
+- **[CTkSpinbox:](https://pypi.org/project/CTkSpinbox/)** *Widget* para criação de *spinboxes* no **customtkinter**.
+- **[CTkMessagebox:](https://github.com/Akascape/CTkMessagebox)** *Widget* para criação de *messageboxes* no **customtkinter**.
 
 ## Funcionamento
 
-O sistema captura imagens através da câmera integrada na ponte rolante e utiliza a biblioteca *OpenCV* para processar essas imagens e identificar containers por suas respectivas cores. O usuário pode selecionar, através de uma interface, a quantidade e tipo de containers desejados, e o sistema irá operar conforme as escolhas feitas.
+O sistema captura imagens através da câmera integrada na ponte rolante e utiliza a biblioteca *OpenCV* para processar essas imagens e identificar contêineres por suas respectivas cores. O usuário pode selecionar, através de uma interface, a quantidade e tipo de containers desejados, e o sistema irá operar conforme as escolhas feitas.
 
 ## Estrutura do Repositório
 
 - **crane_control/crane_control.ino:**
-   Código em C++ embarcado no ESP32, responsável pelo controle de todos os componentes da ponte rolante.
+   Código em **C++** embarcado no *ESP32*, responsável pelo controle de todos os componentes da ponte rolante.
 
 - **thresholds-identifier/thresholds-identifier.py:** 
-   Utilizado para identificar bons valores no espaço de cores HSV para identificar cada uma das cores antes da execução do código principal.
+   Utilizado para identificar bons valores no espaço de cores **HSV** para identificar cada uma das cores antes da execução do código principal.
 
-- **containers_identification/containers_identification.py:** Código principal que executa simultaneamente com o microcontrolador ESP32, processando a imagem e enviando as informações via comunicação serial.
+- **containers_identification/containers_identification.py:** Código principal que executa simultaneamente com o microcontrolador *ESP32*, processando a imagem e enviando as informações via comunicação serial.
 
 - **containers_identification/interface.py:** Implementa a interface gráfica para a seleção de quantidade e tipo de containers.
 
@@ -69,7 +69,7 @@ O sistema captura imagens através da câmera integrada na ponte rolante e utili
 
 - **containers_identification/utils.py:** Funções auxiliares no funcionamento do projeto, desde a identificação dos contêineres através do OpenCV até a seleção de cores e quantidades.
 
-- **car_control/car_control.ino:** Código em C++ embarcado no Arduino Leonardo, responsável pelo controle do carrinho autônomo.
+- **car_control/car_control.ino:** Código em **C++** embarcado no *Arduino Leonardo*, responsável pelo controle do carrinho autônomo.
 
 ## Instalação e Configuração
 
@@ -78,6 +78,8 @@ O sistema captura imagens através da câmera integrada na ponte rolante e utili
 - ESP32
 - Python 3.x
 - OpenCV
+- PySerial
+- CustomTkinter
 - Bibliotecas adicionais conforme especificado nos arquivos `.ino` e `.py` (descritas no arquivo `requirements.txt`)
 
 ### Passos para Configuração
@@ -87,44 +89,45 @@ O sistema captura imagens através da câmera integrada na ponte rolante e utili
    git clone https://github.com/ThiagoLahass/Crane-automated-through-computer-vision.git
    ```
 
-2. Instale as dependências Python listadas no arquivo `requirements.txt`:
+2. Instale as dependências **Python** listadas no arquivo `requirements.txt`:
    ```bash
    pip install -r requirements.txt
    ```
 
-3. Compile e carregue o código `crane.ino` no ESP32 utilizando a *Arduino IDE*.
+3. Compile e carregue o código `crane_control/crane_control.ino` no *ESP32* utilizando a *Arduino IDE*. Da mesma forma compile e carregue o código `car_control/car_control.ino` no *Arduíno Leonardo*.
 
-4. Execute `thresholds-identifier.py` para identificar os valores de cor HSV ideais. Após isso, ajuste os valores das variáveis para cada uma das cores em `containers_identification.py`. Por exemplo, os valores para a cor vermelha devem ser definidos em `H_MIN_RED`, `H_MAX_RED`, `S_MIN_RED`, `S_MAX_RED`, `V_MIN_RED`, `V_MAX_RED`.
+4. Execute `thresholds-identifier/thresholds-identifier.py` para identificar os valores de cor **HSV** ideais. Após isso, ajuste os valores das variáveis para cada uma das cores em `containers_identification.py`. Por exemplo, os valores para a cor vermelha devem ser definidos em `H_MIN_RED`, `H_MAX_RED`, `S_MIN_RED`, `S_MAX_RED`, `V_MIN_RED`, `V_MAX_RED`.
 
-5. Execute `containers_identification.py` para iniciar o processamento da imagem e a comunicação serial com o ESP32.
+5. Execute `containers_identification/containers_identification.py` para iniciar o processamento da imagem e a comunicação serial com o *ESP32*.
+
 
 ## Utilização
 
 1. **Identificação de Cores:**
-   Execute `thresholds-identifier.py` para ajustar os valores HSV das cores.
+   Execute `thresholds-identifier.py` para ajustar os valores **HSV** das cores.
     <p align="center">
       <img src="media/thresholds-identifier.jpeg" />
     </p>
 
 2. **Interface de Seleção:**
-   Utilize a interface para selecionar a quantidade e tipo de containers.
+   Utilize a interface para selecionar a quantidade e tipo de contêineres.
     <p align="center">
       <img src="media/interface.png" />
     </p>
 
 3. **Operação Automática:**
-   Após a seleção, o sistema operará automaticamente para mover e posicionar os containers conforme especificado.
+   Após a seleção, o sistema operará automaticamente para mover e posicionar os contêineres conforme especificado.
    <p align="center">
       <img src="media/Projeto_Final-3x.gif" />
    </p>
 
 ## Contribuição
 
-1. Faça um fork do projeto.
-2. Crie uma branch para sua feature (`git checkout -b feature/nova-feature`).
-3. Commit suas mudanças (`git commit -am 'Adiciona nova feature'`).
-4. Faça um push para a branch (`git push origin feature/nova-feature`).
-5. Abra um Pull Request.
+1. Faça um *fork* do projeto.
+2. Crie uma *branch* para sua *feature* (`git checkout -b feature/nova-feature`).
+3. *Commit* suas mudanças (`git commit -am 'Adiciona nova feature'`).
+4. Faça um *push* para a *branch* (`git push origin feature/nova-feature`).
+5. Abra um *Pull Request*.
 
 ## Desenvolvedores
 
@@ -134,4 +137,4 @@ O sistema captura imagens através da câmera integrada na ponte rolante e utili
 
 ## Agradecimentos
 
-Agradecemos a todos os contribuidores e apoiadores deste projeto, principalmente ao Prof. Dr. Rodolfo da Silva Villaça e Prof. Dr. Ricardo Carminati de Mello por acompanharem o seu desenvolvimento.
+Agradecemos a todos os contribuidores e apoiadores deste projeto, principalmente ao **Prof. Dr. Rodolfo da Silva Villaça** e **Prof. Dr. Ricardo Carminati de Mello** por acompanharem o seu desenvolvimento.
