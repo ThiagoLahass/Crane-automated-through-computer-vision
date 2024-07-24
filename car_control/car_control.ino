@@ -18,7 +18,7 @@ int LDR_PIN = A3;
 
 // Auxiliary variables
 float kp = 0.05;
-float baseSpeed = 75;
+float baseSpeed = 85;
 int flag = 0;
 
 /**
