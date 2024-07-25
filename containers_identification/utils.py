@@ -3,26 +3,26 @@ import cv2
 # ============= TEST BEFORE USE ==========
 # initial min and max HSV filter to RED
 H_MIN_RED = 0
-H_MAX_RED = 196
-S_MIN_RED = 108
-S_MAX_RED = 138
-V_MIN_RED = 160
+H_MAX_RED = 216
+S_MIN_RED = 82
+S_MAX_RED = 124
+V_MIN_RED = 240
 V_MAX_RED = 255
 
 # initial min and max HSV filter to GREEN
-H_MIN_GREEN = 69
-H_MAX_GREEN = 92
-S_MIN_GREEN = 95
-S_MAX_GREEN = 201
-V_MIN_GREEN = 135
+H_MIN_GREEN = 73
+H_MAX_GREEN = 91
+S_MIN_GREEN = 63
+S_MAX_GREEN = 255
+V_MIN_GREEN = 118
 V_MAX_GREEN = 255
 
 # initial min and max HSV filter to BLUE
-H_MIN_BLUE = 99
-H_MAX_BLUE = 159
-S_MIN_BLUE = 155
-S_MAX_BLUE = 232
-V_MIN_BLUE = 173
+H_MIN_BLUE = 96
+H_MAX_BLUE = 168
+S_MIN_BLUE = 148
+S_MAX_BLUE = 251
+V_MIN_BLUE = 152
 V_MAX_BLUE = 255
 
 # initial min and max HSV filter to YELLOW
