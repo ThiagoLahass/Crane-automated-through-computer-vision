@@ -106,7 +106,7 @@ O sistema captura imagens através da câmera integrada na ponte rolante e utili
 1. **Identificação de Cores:**
    Execute `thresholds-identifier.py` para ajustar os valores **HSV** das cores.
     <p align="center">
-      <img src="media/thresholds-identifier.jpeg" />
+      <img src="media/selecao-thresholds.png" />
     </p>
 
 2. **Interface de Seleção:**
