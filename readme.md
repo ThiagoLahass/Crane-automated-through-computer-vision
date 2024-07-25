@@ -112,7 +112,7 @@ O sistema captura imagens através da câmera integrada na ponte rolante e utili
 2. **Interface de Seleção:**
    Utilize a interface para selecionar a quantidade e tipo de contêineres.
     <p align="center">
-      <img src="media/interface.png" />
+      <img src="media/interface-user.png" />
     </p>
 
 3. **Operação Automática:**
