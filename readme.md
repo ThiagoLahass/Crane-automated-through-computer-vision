@@ -41,7 +41,7 @@ Além disso, um vídeo exibindo a apresentação do projeto na **Mostra Ufes em 
 
 #### Você pode visualizar o *PDF do esquemático do hardware da ponte rolante* [aqui](doc/Schematic_crane.pdf).
 
-#### Além disso, também pode encontrar o *PDF do esquemático do hardware do carrinho autônomo* [aqui](doc/Schematic_car_linefollower.pdf).
+#### Além disso, também pode encontrar o *PDF do esquemático do hardware do carrinho autônomo* [aqui](doc/Schematic_car.pdf).
 
 ### Software (Bibliotecas utilizadas):
 - **[OpenCV:](https://docs.opencv.org/4.x/d1/dfb/intro.html)** Biblioteca de visão computacional para processamento de imagens.
