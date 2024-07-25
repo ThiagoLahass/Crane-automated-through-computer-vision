@@ -106,19 +106,19 @@ O sistema captura imagens através da câmera integrada na ponte rolante e utili
 ## Utilização
 
 1. **Identificação de Cores:**
-   Execute `thresholds-identifier.py` para ajustar os valores **HSV** das cores.
+   Execute `thresholds-identifier.py` para ajustar os valores **HSV** das cores (o exemplo abaixo retrata o ajuste dos limites que permitem a criação da máscara que possibilita a identificação da cor azul):
     <p align="center">
       <img src="media/selecao-thresholds.png" />
     </p>
 
 2. **Interface de Seleção:**
-   Utilize a interface para selecionar a quantidade e tipo de contêineres.
+   Utilize a interface para selecionar a quantidade e tipo de contêineres:
     <p align="center">
       <img src="media/interface-user.png" />
     </p>
 
 3. **Operação Automática:**
-   Após a seleção, o sistema operará automaticamente para mover e posicionar os contêineres conforme especificado.
+   Após a seleção, o sistema operará automaticamente para mover e posicionar os contêineres conforme especificado:
    <p align="center">
       <img src="media/Projeto_Final-3x.gif" />
    </p>
