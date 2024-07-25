@@ -131,9 +131,9 @@ O sistema captura imagens através da câmera integrada na ponte rolante e utili
 
 ## Desenvolvedores
 
-- **Thiago Felippe Neitzke Lahass** - *Desenvolvedor Principal* - [Thiago Lahass](https://github.com/ThiagoLahass)
-- **Gabriel Gatti da Silva** - [Gabriel Gatti](https://github.com/gabrielgatti7)
-- **Bruno Santos Fernandes** - [Bruno Santos](https://github.com/BrunoSantosFF)
+- **[Thiago Felippe Neitzke Lahass](https://github.com/ThiagoLahass)** - thiago.lahass@edu.ufes.br
+- **[Gabriel Gatti da Silva](https://github.com/gabrielgatti7)** - gabriel.silva.13288554739@edu.ufes.br
+- **[Bruno Santos Fernandes](https://github.com/BrunoSantosFF)** - bruno.s.fernandes@edu.ufes.br
 
 ## Agradecimentos
 
