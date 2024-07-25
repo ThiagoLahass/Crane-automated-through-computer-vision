@@ -32,7 +32,7 @@ Além disso, um vídeo exibindo a apresentação do projeto na **Mostra Ufes em 
    - **Interruptores:** Para acionar e desativar componentes como a chave geral, ponte H, luzes, entre outros.
    - **Câmera:** Integrada à ponte rolante para capturar imagens dos contêineres.
 - **Carrinho autônomo:**
-   - **Arduíno Leonardo:** Microcontrolador responsável pelo controle dos motores e sensores do carrinho.
+   - **Arduino Leonardo:** Microcontrolador responsável pelo controle dos motores e sensores do carrinho.
    - **Motores Esquerdo e Direito:** Permitem o movimento do carrinho para frente, para trás e curvas.
    - **Ponte H:** Controla o movimento dos motores esquerdo e direito.
    - **Sensor Reflexivo Infravermelho TCRT5000:** Utilizado para detecção de linha e orientação do carrinho no trajeto.
@@ -53,7 +53,7 @@ Além disso, um vídeo exibindo a apresentação do projeto na **Mostra Ufes em 
 
 ## Funcionamento
 
-O sistema captura imagens através da câmera integrada na ponte rolante e utiliza a biblioteca *OpenCV* para processar essas imagens e identificar contêineres por suas respectivas cores. O usuário pode selecionar, através de uma interface, a quantidade e tipo de containers desejados, e o sistema irá operar conforme as escolhas feitas.
+O sistema captura imagens através da câmera integrada na ponte rolante e utiliza a biblioteca *OpenCV* para processar essas imagens e identificar contêineres por suas respectivas cores. O usuário pode selecionar, através de uma interface, a quantidade e tipo de contêineres desejados, e o sistema irá operar conforme as escolhas feitas.
 
 ## Estrutura do Repositório
 
@@ -65,7 +65,7 @@ O sistema captura imagens através da câmera integrada na ponte rolante e utili
 
 - **containers_identification/containers_identification.py:** Código principal que executa simultaneamente com o microcontrolador *ESP32*, processando a imagem e enviando as informações via comunicação serial.
 
-- **containers_identification/interface.py:** Implementa a interface gráfica para a seleção de quantidade e tipo de containers.
+- **containers_identification/interface.py:** Implementa a interface gráfica para a seleção de quantidade e tipo de contêineres.
 
 - **containers_identification/my_serial.py:** Implementação das funções usadas para realizar a comunicação serial.
 
@@ -96,7 +96,7 @@ O sistema captura imagens através da câmera integrada na ponte rolante e utili
    pip install -r requirements.txt
    ```
 
-3. Compile e carregue o código `crane_control/crane_control.ino` no *ESP32* utilizando a *Arduino IDE*. Da mesma forma compile e carregue o código `car_control/car_control.ino` no *Arduíno Leonardo*.
+3. Compile e carregue o código `crane_control/crane_control.ino` no *ESP32* utilizando a *Arduino IDE*. Da mesma forma compile e carregue o código `car_control/car_control.ino` no *Arduino Leonardo*.
 
 4. Execute `thresholds-identifier/thresholds-identifier.py` para identificar os valores de cor **HSV** ideais. Após isso, ajuste os valores das variáveis para cada uma das cores em `containers_identification.py`. Por exemplo, os valores para a cor vermelha devem ser definidos em `H_MIN_RED`, `H_MAX_RED`, `S_MIN_RED`, `S_MAX_RED`, `V_MIN_RED`, `V_MAX_RED`.
 
