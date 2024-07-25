@@ -13,7 +13,9 @@ O Sistema de Automação Logística com Visão Computacional é uma solução in
 
 O video do pitch inicial do projeto pode ser encontrado [aqui](https://youtu.be/iw18S4EYCus?si=bXUdSKVfdXWQbk5L).
 
-A animação vista no início desse documento é uma parte do vídeo completo do projeto em funcionamento, acelerado em 3x. O video completo pode ser encontrado [aqui](/media/under_development.gif).
+A animação vista no início desse documento é uma parte do vídeo completo do projeto em funcionamento, acelerado em 3x. O video completo pode ser encontrado [aqui](https://youtu.be/0nDDJWz8z_A).
+
+Além disso, um vídeo exibindo a apresentação do projeto na **Mostra Ufes em Computação e Tecnologia** referente ao semestre *2024/1*, mostrando os detalhes e explicando o seu funcionamento do pode ser vista [aqui](https://youtu.be/92wKe2zjWa8).
 
 ## Componentes do Sistema
 
